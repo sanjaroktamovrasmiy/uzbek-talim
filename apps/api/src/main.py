@@ -3,6 +3,7 @@ FastAPI Application Entry Point.
 """
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
@@ -71,6 +72,12 @@ def create_app() -> FastAPI:
 
     # Routes
     app.include_router(api_router, prefix=settings.api_prefix)
+
+    # Static files for uploads
+    from fastapi.staticfiles import StaticFiles
+    upload_dir = Path(settings.upload_dir)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
     # Health check
     @app.get("/health")

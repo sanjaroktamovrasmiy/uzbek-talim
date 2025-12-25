@@ -2,7 +2,7 @@
 name = "bot"
 version = "1.0.0"
 description = "Telegram bot for Uzbek Ta'lim platform"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 dependencies = [
     "aiogram>=3.3.0",

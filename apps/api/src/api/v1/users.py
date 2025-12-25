@@ -2,9 +2,13 @@
 User management endpoints.
 """
 
+import os
+import uuid
+from pathlib import Path
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException, status
+from shared import get_settings
 
 from src.schemas.user import (
     UserResponse,
@@ -16,6 +20,8 @@ from src.schemas.common import PaginationParams
 from src.services.user_service import UserService
 from src.core.deps import get_user_service, get_current_user, require_admin
 from db.models import User
+
+settings = get_settings()
 
 
 router = APIRouter()
@@ -97,4 +103,57 @@ async def delete_user(
     """
     await user_service.delete_user(user_id)
     return {"message": "User deleted successfully"}
+
+
+@router.post("/upload-avatar")
+async def upload_avatar(
+    file: Annotated[UploadFile, File()],
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> dict:
+    """
+    Upload user avatar image.
+    """
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Faqat rasm fayllari qabul qilinadi"
+        )
+
+    # Validate file size (5MB max)
+    file_content = await file.read()
+    if len(file_content) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Rasm hajmi 5MB dan kichik bo'lishi kerak"
+        )
+
+    # Create uploads directory if not exists
+    upload_dir = Path(settings.upload_dir) / "avatars"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate unique filename
+    file_ext = Path(file.filename or "image.jpg").suffix
+    filename = f"{uuid.uuid4()}{file_ext}"
+    file_path = upload_dir / filename
+
+    # Save file
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    # Generate URL (relative to static files or full URL)
+    avatar_url = f"/uploads/avatars/{filename}"
+
+    # Update user avatar_url
+    updated_user = await user_service.update_user(
+        current_user.id,
+        UserUpdateRequest(avatar_url=avatar_url)
+    )
+
+    return {
+        "message": "Avatar uploaded successfully",
+        "avatar_url": avatar_url,
+        "user": UserResponse.model_validate(updated_user)
+    }
 

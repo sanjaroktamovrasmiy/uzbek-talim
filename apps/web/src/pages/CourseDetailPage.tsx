@@ -1,8 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, Users, Calendar, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Calendar, CheckCircle, MessageSquare } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import toast from 'react-hot-toast';
 
 export function CourseDetailPage() {
   const { slug } = useParams();
+  const { isAuthenticated } = useAuthStore();
 
   // Mock data - replace with API call
   const course = {
@@ -97,9 +100,25 @@ export function CourseDetailPage() {
                 <span className="text-slate-500 text-sm">oyiga</span>
               </div>
 
-              <Link to="/register" className="btn-primary w-full mb-3">
-                Yozilish
-              </Link>
+              {isAuthenticated ? (
+                <button 
+                  onClick={() => {
+                    toast.success("So'rovingiz qabul qilindi! Tez orada siz bilan bog'lanamiz.");
+                    // TODO: API ga enrollment yuborish
+                  }}
+                  className="btn-primary w-full mb-3"
+                >
+                  Kursga yozilish
+                </button>
+              ) : (
+                <Link 
+                  to="/login" 
+                  state={{ from: { pathname: `/courses/${slug}` } }}
+                  className="btn-primary w-full mb-3"
+                >
+                  Kirish va yozilish
+                </Link>
+              )}
               
               <a
                 href="https://t.me/uzbektalim_bot"
@@ -107,6 +126,7 @@ export function CourseDetailPage() {
                 rel="noopener noreferrer"
                 className="btn-secondary w-full"
               >
+                <MessageSquare className="w-4 h-4" />
                 Telegram orqali
               </a>
 
@@ -116,10 +136,10 @@ export function CourseDetailPage() {
                   Bizga qo'ng'iroq qiling yoki yozing:
                 </p>
                 <a
-                  href="tel:+998901234567"
-                  className="text-primary-400 font-medium"
+                  href="tel:+998944758090"
+                  className="text-primary-400 font-medium hover:underline"
                 >
-                  +998 90 123 45 67
+                  +998 94 475 80 90
                 </a>
               </div>
             </div>

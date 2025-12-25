@@ -4,17 +4,20 @@ Authentication handlers - registration, login.
 
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.states.auth import RegistrationStates, LoginStates
+from src.states.auth import RegistrationStates
 from src.keyboards.auth import (
     get_phone_keyboard,
     get_cancel_keyboard,
+    get_confirm_keyboard,
 )
 from src.keyboards.main import get_main_keyboard
 from src.utils.messages import MESSAGES
 from src.utils.validators import validate_phone, format_phone
+from src.services.user_service import UserService
 
 
 router = Router(name="auth")
@@ -39,6 +42,10 @@ async def start_registration(message: Message, state: FSMContext) -> None:
 @router.message(RegistrationStates.phone, F.contact)
 async def process_phone_contact(message: Message, state: FSMContext) -> None:
     """Process phone from contact."""
+    if not message.contact:
+        await message.answer(MESSAGES["invalid_phone"])
+        return
+
     phone = message.contact.phone_number
     await state.update_data(phone=format_phone(phone))
     await state.set_state(RegistrationStates.first_name)
@@ -51,6 +58,10 @@ async def process_phone_contact(message: Message, state: FSMContext) -> None:
 @router.message(RegistrationStates.phone)
 async def process_phone_text(message: Message, state: FSMContext) -> None:
     """Process phone from text."""
+    if not message.text:
+        await message.answer(MESSAGES["invalid_phone"])
+        return
+
     phone = message.text
 
     if not validate_phone(phone):
@@ -68,6 +79,10 @@ async def process_phone_text(message: Message, state: FSMContext) -> None:
 @router.message(RegistrationStates.first_name)
 async def process_first_name(message: Message, state: FSMContext) -> None:
     """Process first name."""
+    if not message.text:
+        await message.answer("Ismni matn ko'rinishida yuboring.")
+        return
+
     first_name = message.text.strip()
 
     if len(first_name) < 2:
@@ -82,6 +97,10 @@ async def process_first_name(message: Message, state: FSMContext) -> None:
 @router.message(RegistrationStates.last_name)
 async def process_last_name(message: Message, state: FSMContext) -> None:
     """Process last name."""
+    if not message.text:
+        await message.answer("Familiyani matn ko'rinishida yuboring.")
+        return
+
     last_name = message.text.strip()
 
     if len(last_name) < 2:
@@ -89,6 +108,29 @@ async def process_last_name(message: Message, state: FSMContext) -> None:
         return
 
     await state.update_data(last_name=last_name)
+    await state.set_state(RegistrationStates.password)
+    await message.answer(
+        "🔐 <b>Parol yarating:</b>\n\n"
+        "Parol kamida 6 ta belgidan iborat bo'lishi kerak.\n"
+        "Parolni yaxshi eslab qoling, chunki u web sahifaga kirish uchun kerak bo'ladi.",
+        reply_markup=get_cancel_keyboard(),
+    )
+
+
+@router.message(RegistrationStates.password)
+async def process_password(message: Message, state: FSMContext) -> None:
+    """Process password."""
+    if not message.text:
+        await message.answer("Parolni matn ko'rinishida yuboring.")
+        return
+
+    password = message.text.strip()
+
+    if len(password) < 6:
+        await message.answer("Parol kamida 6 ta belgidan iborat bo'lishi kerak.")
+        return
+
+    await state.update_data(password=password)
     await state.set_state(RegistrationStates.confirmation)
 
     # Show confirmation
@@ -97,29 +139,72 @@ async def process_last_name(message: Message, state: FSMContext) -> None:
         MESSAGES["registration_confirm"].format(
             phone=data["phone"],
             first_name=data["first_name"],
-            last_name=last_name,
-        ),
+            last_name=data["last_name"],
+        ) + "\n\n🔐 Parol: " + "*" * len(password),
+        reply_markup=get_confirm_keyboard(),
     )
 
 
 @router.message(RegistrationStates.confirmation, F.text == "✅ Tasdiqlash")
-async def confirm_registration(message: Message, state: FSMContext) -> None:
+async def confirm_registration(
+    message: Message,
+    state: FSMContext,
+    session: AsyncSession,
+) -> None:
     """Confirm registration."""
+    if not message.from_user:
+        return
+
     data = await state.get_data()
+    user_service = UserService(session)
 
-    # TODO: Save user to database
-    # user = await create_user(
-    #     phone=data["phone"],
-    #     first_name=data["first_name"],
-    #     last_name=data["last_name"],
-    #     telegram_id=message.from_user.id,
-    # )
+    try:
+        # Check if phone already exists (bitta raqamga bitta account)
+        from src.repositories.user_repository import UserRepository
+        repo = UserRepository(session)
+        existing = await repo.get_by_phone(data["phone"])
+        if existing and existing.telegram_id != message.from_user.id:
+            await message.answer(
+                "❌ Bu telefon raqam allaqachon ro'yxatdan o'tgan.\n"
+                "Bitta raqamga faqat bitta account yaratish mumkin.\n\n"
+                "Agar bu sizning raqamingiz bo'lsa, web sahifaga kiring va kirish qiling.",
+            )
+            await state.clear()
+            return
 
-    await state.clear()
-    await message.answer(
-        MESSAGES["registration_success"],
-        reply_markup=get_main_keyboard(),
-    )
+        # Save user to database with password
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        
+        user = await user_service.register_user(
+            telegram_id=message.from_user.id,
+            phone=data["phone"],
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            telegram_username=message.from_user.username,
+        )
+        
+        # Update password if provided
+        if "password" in data:
+            password_hash = pwd_context.hash(data["password"])
+            await repo.update(user, password_hash=password_hash)
+
+        await state.clear()
+        await message.answer(
+            MESSAGES["registration_success"] + "\n\n"
+            "✅ Web sahifaga kirish uchun parolingizni ishlatishingiz mumkin.",
+            reply_markup=get_main_keyboard(),
+        )
+    except ValueError as e:
+        await message.answer(
+            f"❌ Xatolik: {str(e)}\n\n"
+            "Iltimos, boshqa telefon raqam kiriting yoki admin bilan bog'laning.",
+        )
+    except Exception as e:
+        await message.answer(
+            f"❌ Xatolik yuz berdi: {str(e)}\n\n"
+            "Iltimos, qaytadan urinib ko'ring yoki admin bilan bog'laning.",
+        )
 
 
 # ===========================================

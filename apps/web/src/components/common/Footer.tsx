@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { GraduationCap, Phone, Mail, MapPin, Send } from 'lucide-react';
+import { Phone, Mail, MapPin, Send } from 'lucide-react';
+import { BrandLogo } from '@/components/common/BrandLogo';
 
 export function Footer() {
   return (
@@ -8,12 +9,12 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg">
-                <GraduationCap className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-lg gradient-text">Uzbek Ta'lim</span>
-            </Link>
+            <BrandLogo 
+              to="/" 
+              imgClassName="h-12 w-12" 
+              className="mb-4" 
+              showFallbackText={false}
+            />
             <p className="text-slate-400 text-sm leading-relaxed">
               Professional ta'lim markazi. Sifatli ta'lim - yorug' kelajak!
             </p>
@@ -47,7 +48,9 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-slate-400 text-sm">
                 <Phone className="w-4 h-4 text-primary-400" />
-                +998 XX XXX XX XX
+                <a href="tel:+998944758090" className="hover:text-primary-400 transition-colors">
+                  +998 94 475 80 90
+                </a>
               </li>
               <li className="flex items-center gap-2 text-slate-400 text-sm">
                 <Mail className="w-4 h-4 text-primary-400" />
@@ -55,7 +58,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2 text-slate-400 text-sm">
                 <MapPin className="w-4 h-4 text-primary-400" />
-                Toshkent shahri
+                Samarqand shahri
               </li>
             </ul>
           </div>
@@ -80,7 +83,7 @@ export function Footer() {
 
         {/* Copyright */}
         <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-500 text-sm">
-          © {new Date().getFullYear()} Uzbek Ta'lim. Barcha huquqlar himoyalangan.
+          © 2025 Uzbek Ta'lim. Barcha huquqlar himoyalangan.
         </div>
       </div>
     </footer>

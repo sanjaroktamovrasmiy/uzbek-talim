@@ -14,6 +14,12 @@ from src.schemas.auth import (
     RefreshTokenRequest,
     VerifyPhoneRequest,
     VerifyPhoneResponse,
+    SendTelegramCodeRequest,
+    SendTelegramCodeResponse,
+    VerifyTelegramCodeRequest,
+    VerifyTelegramCodeResponse,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
 )
 from src.schemas.user import UserResponse
 from src.services.auth_service import AuthService
@@ -93,4 +99,69 @@ async def logout(
     """
     await auth_service.logout(current_user.id)
     return {"message": "Successfully logged out"}
+
+
+@router.post("/send-telegram-code", response_model=SendTelegramCodeResponse)
+async def send_telegram_code(
+    request: SendTelegramCodeRequest,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> SendTelegramCodeResponse:
+    """
+    Send verification code via Telegram bot.
+
+    User must have telegram_id in database (connected via bot first).
+    """
+    result = await auth_service.send_telegram_code(
+        phone=request.phone,
+        is_login=False,  # Can be used for both login and registration
+    )
+    return SendTelegramCodeResponse(**result)
+
+
+@router.post("/send-telegram-code-login", response_model=SendTelegramCodeResponse)
+async def send_telegram_code_login(
+    request: SendTelegramCodeRequest,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> SendTelegramCodeResponse:
+    """
+    Send verification code via Telegram bot for login.
+    """
+    result = await auth_service.send_telegram_code(
+        phone=request.phone,
+        is_login=True,
+    )
+    return SendTelegramCodeResponse(**result)
+
+
+@router.post("/verify-telegram-code", response_model=VerifyTelegramCodeResponse)
+async def verify_telegram_code(
+    request: VerifyTelegramCodeRequest,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> VerifyTelegramCodeResponse:
+    """
+    Verify code sent via Telegram and optionally return JWT tokens.
+    """
+    result = await auth_service.verify_telegram_code(
+        phone=request.phone,
+        code=request.code,
+        return_tokens=request.return_tokens,
+    )
+    return VerifyTelegramCodeResponse(**result)
+
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+async def change_password(
+    request: ChangePasswordRequest,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> ChangePasswordResponse:
+    """
+    Change user password.
+    """
+    result = await auth_service.change_password(
+        user_id=current_user.id,
+        current_password=request.current_password,
+        new_password=request.new_password,
+    )
+    return ChangePasswordResponse(**result)
 

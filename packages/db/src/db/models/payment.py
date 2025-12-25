@@ -90,7 +90,7 @@ class Payment(Base, UUIDMixin, TimestampMixin):
     user: Mapped["User"] = relationship(
         "User",
         back_populates="payments",
-        foreign_keys=[user_id],
+        foreign_keys="[Payment.user_id]",
         lazy="joined",
     )
 

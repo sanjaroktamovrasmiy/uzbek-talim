@@ -4,6 +4,9 @@
 
 .PHONY: help install dev build test lint format clean docker-up docker-down migrate
 
+# Use `python3` by default (some systems don't ship `python`)
+PYTHON ?= python3
+
 # Colors
 BLUE := \033[34m
 GREEN := \033[32m
@@ -57,7 +60,7 @@ dev-api: ## Run API server
 	cd apps/api && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-bot: ## Run Telegram bot
-	cd apps/bot && python -m src.main
+	cd apps/bot && $(PYTHON) -m src.main
 
 dev-web: ## Run frontend dev server
 	cd apps/web && npm run dev

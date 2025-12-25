@@ -5,6 +5,7 @@ Shared utility functions.
 from shared.utils.helpers import (
     generate_uuid,
     generate_code,
+    generate_password,
     format_phone,
     validate_phone,
     slugify,
@@ -20,6 +21,7 @@ from shared.utils.datetime_utils import (
 __all__ = [
     "generate_uuid",
     "generate_code",
+    "generate_password",
     "format_phone",
     "validate_phone",
     "slugify",

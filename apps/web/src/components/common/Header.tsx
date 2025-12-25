@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { GraduationCap, Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import clsx from 'clsx';
+import { BrandLogo } from '@/components/common/BrandLogo';
 
 const navLinks = [
   { to: '/', label: "Bosh sahifa" },
@@ -18,14 +19,13 @@ export function Header() {
       <div className="container-custom">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="p-2 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-lg gradient-text hidden sm:block">
-              Uzbek Ta'lim
-            </span>
-          </Link>
+          <BrandLogo
+            to="/"
+            imgClassName="h-10 w-10"
+            className="gap-2"
+            showFallbackText={false}
+            fallbackTextClassName="hidden sm:block text-lg"
+          />
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">

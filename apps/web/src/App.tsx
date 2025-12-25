@@ -12,10 +12,13 @@ import { SchedulePage } from './pages/SchedulePage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AuthProvider } from './components/auth/AuthProvider';
+import { GuestRoute } from './components/auth/GuestRoute';
 
 function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
       <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
@@ -24,8 +27,8 @@ function App() {
           <Route path="courses/:slug" element={<CourseDetailPage />} />
         </Route>
 
-        {/* Auth routes */}
-        <Route element={<AuthLayout />}>
+        {/* Auth routes - faqat mehmon uchun */}
+        <Route element={<GuestRoute><AuthLayout /></GuestRoute>}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
         </Route>
@@ -41,6 +44,7 @@ function App() {
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

@@ -79,6 +79,7 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     payments: Mapped[List["Payment"]] = relationship(
         "Payment",
         back_populates="user",
+        foreign_keys="[Payment.user_id]",
         lazy="selectin",
     )
     notifications: Mapped[List["Notification"]] = relationship(

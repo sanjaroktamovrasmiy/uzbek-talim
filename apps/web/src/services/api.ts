@@ -58,8 +58,43 @@ export const authApi = {
     return response.data;
   },
 
-  getMe: async () => {
-    const response = await api.get('/auth/me');
+  getMe: async (accessToken?: string) => {
+    const response = await api.get(
+      '/auth/me',
+      accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined
+    );
+    return response.data;
+  },
+
+  verifyPhone: async (phone: string, code: string) => {
+    const response = await api.post('/auth/verify', { phone, code });
+    return response.data;
+  },
+
+  sendTelegramCode: async (phone: string) => {
+    const response = await api.post('/auth/send-telegram-code', { phone });
+    return response.data;
+  },
+
+  sendTelegramCodeLogin: async (phone: string) => {
+    const response = await api.post('/auth/send-telegram-code-login', { phone });
+    return response.data;
+  },
+
+  verifyTelegramCode: async (phone: string, code: string, returnTokens: boolean = true) => {
+    const response = await api.post('/auth/verify-telegram-code', {
+      phone,
+      code,
+      return_tokens: returnTokens,
+    });
+    return response.data;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await api.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
     return response.data;
   },
 };
@@ -88,10 +123,19 @@ export const usersApi = {
     first_name: string;
     last_name: string;
     email: string;
+    avatar_url: string;
   }>) => {
-    const token = useAuthStore.getState().token;
     const user = useAuthStore.getState().user;
     const response = await api.patch(`/users/${user?.id}`, data);
+    return response.data;
+  },
+
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/users/upload-avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
   },
 };

@@ -19,6 +19,9 @@ def get_guest_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="📚 Kurslar"),
             ],
             [
+                KeyboardButton(text="🌐 Web sahifa"),
+            ],
+            [
                 KeyboardButton(text="📞 Bog'lanish"),
                 KeyboardButton(text="❓ Yordam"),
             ],
@@ -42,6 +45,9 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
             [
                 KeyboardButton(text="📚 Kurslar"),
                 KeyboardButton(text="📝 Vazifalar"),
+            ],
+            [
+                KeyboardButton(text="🌐 Web sahifa"),
             ],
             [
                 KeyboardButton(text="📞 Bog'lanish"),

@@ -1,5 +1,5 @@
-import { Outlet, Link } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
+import { Outlet } from 'react-router-dom';
+import { BrandLogo } from '@/components/common/BrandLogo';
 
 export function AuthLayout() {
   return (
@@ -12,15 +12,14 @@ export function AuthLayout() {
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
-        <Link
-          to="/"
-          className="flex items-center justify-center gap-3 mb-8 group"
-        >
-          <div className="p-3 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl shadow-lg shadow-primary-500/25 group-hover:shadow-primary-500/40 transition-shadow">
-            <GraduationCap className="w-8 h-8 text-white" />
-          </div>
-          <span className="text-2xl font-bold gradient-text">Uzbek Ta'lim</span>
-        </Link>
+        <div className="flex justify-center mb-8">
+          <BrandLogo
+            to="/"
+            imgClassName="h-20 sm:h-24 w-20 sm:w-24"
+            className="justify-center gap-3"
+            showFallbackText={false}
+          />
+        </div>
 
         {/* Content */}
         <div className="card">
@@ -29,7 +28,7 @@ export function AuthLayout() {
 
         {/* Footer */}
         <p className="text-center text-slate-500 text-sm mt-6">
-          © 2024 Uzbek Ta'lim. Barcha huquqlar himoyalangan.
+          © 2025 Uzbek Ta'lim. Barcha huquqlar himoyalangan.
         </p>
       </div>
     </div>

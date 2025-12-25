@@ -11,6 +11,7 @@ class RegistrationStates(StatesGroup):
     phone = State()
     first_name = State()
     last_name = State()
+    password = State()
     confirmation = State()
 
 

@@ -19,6 +19,9 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        # We parse complex values (like List[int]) ourselves via field validators,
+        # so disable automatic JSON decoding for env/.env sources.
+        enable_decoding=False,
     )
 
     # ===========================================
@@ -59,6 +62,14 @@ class Settings(BaseSettings):
     api_cors_origins: List[str] = Field(
         default=["http://localhost:3000", "http://localhost:5173"],
         description="CORS origins",
+    )
+
+    # ===========================================
+    # Web (Frontend)
+    # ===========================================
+    web_url: str = Field(
+        default="",
+        description="Public web application URL (used for Telegram inline buttons)",
     )
 
     # ===========================================
