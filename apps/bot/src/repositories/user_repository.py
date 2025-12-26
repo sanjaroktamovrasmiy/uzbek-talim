@@ -18,7 +18,7 @@ class UserRepository:
         self.session = session
 
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[User]:
-        """Get user by Telegram ID."""
+        """Get user by Telegram ID (only non-deleted users)."""
         result = await self.session.execute(
             select(User).where(
                 User.telegram_id == telegram_id,
@@ -26,6 +26,24 @@ class UserRepository:
             )
         )
         return result.scalar_one_or_none()
+
+    async def get_by_telegram_id_include_deleted(self, telegram_id: int) -> Optional[User]:
+        """Get user by Telegram ID (including deleted users)."""
+        result = await self.session.execute(
+            select(User).where(
+                User.telegram_id == telegram_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def restore(self, user: User) -> User:
+        """Restore soft-deleted user by setting deleted_at to None."""
+        from datetime import datetime
+        user.deleted_at = None
+        self.session.add(user)
+        await self.session.flush()
+        await self.session.refresh(user)
+        return user
 
     async def get_by_phone(self, phone: str) -> Optional[User]:
         """Get user by phone number."""

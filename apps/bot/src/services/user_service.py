@@ -23,6 +23,7 @@ class UserService:
     ) -> User:
         """
         Get user by Telegram ID or create new one.
+        If user was soft-deleted, restore it.
 
         Args:
             telegram_id: Telegram user ID
@@ -31,20 +32,30 @@ class UserService:
         Returns:
             User instance
         """
+        # First try to get active user
         user = await self.repo.get_by_telegram_id(telegram_id)
 
         if not user:
-            # Create new user with placeholder phone
-            user = User(
-                phone=f"+998000000000",  # Placeholder, will be updated during registration
-                first_name="Telegram",
-                last_name="User",
-                telegram_id=telegram_id,
-                telegram_username=telegram_username,
-                role=UserRole.GUEST.value,
-                is_verified=False,
-            )
-            await self.repo.create(user)
+            # Check if user exists but was deleted
+            deleted_user = await self.repo.get_by_telegram_id_include_deleted(telegram_id)
+            if deleted_user:
+                # Restore deleted user
+                user = await self.repo.restore(deleted_user)
+                # Update username if provided
+                if telegram_username and user.telegram_username != telegram_username:
+                    user = await self.repo.update(user, telegram_username=telegram_username)
+            else:
+                # Create new user with placeholder phone
+                user = User(
+                    phone=f"+998{telegram_id % 1000000000:09d}",  # Generate unique placeholder phone
+                    first_name="Telegram",
+                    last_name="User",
+                    telegram_id=telegram_id,
+                    telegram_username=telegram_username,
+                    role=UserRole.GUEST.value,
+                    is_verified=False,
+                )
+                await self.repo.create(user)
 
         return user
 
@@ -69,15 +80,42 @@ class UserService:
         Returns:
             Created/updated user
         """
-        # Check if phone already exists
+        # Check if phone already exists (excluding current telegram_id)
         existing_by_phone = await self.repo.get_by_phone(phone)
         if existing_by_phone and existing_by_phone.telegram_id != telegram_id:
             raise ValueError("Bu telefon raqam allaqachon ro'yxatdan o'tgan")
 
-        # Get or create user by Telegram ID
+        # Get or create user by Telegram ID (including deleted)
         user = await self.repo.get_by_telegram_id(telegram_id)
-
-        if user:
+        
+        if not user:
+            # Check if user exists but was deleted
+            deleted_user = await self.repo.get_by_telegram_id_include_deleted(telegram_id)
+            if deleted_user:
+                # Restore and update deleted user
+                user = await self.repo.restore(deleted_user)
+                await self.repo.update(
+                    user,
+                    phone=phone,
+                    first_name=first_name,
+                    last_name=last_name,
+                    telegram_username=telegram_username,
+                    role=UserRole.STUDENT.value,
+                    is_verified=True,
+                )
+            else:
+                # Create new user
+                user = User(
+                    phone=phone,
+                    first_name=first_name,
+                    last_name=last_name,
+                    telegram_id=telegram_id,
+                    telegram_username=telegram_username,
+                    role=UserRole.STUDENT.value,
+                    is_verified=True,
+                )
+                await self.repo.create(user)
+        else:
             # Update existing user
             await self.repo.update(
                 user,
@@ -88,18 +126,6 @@ class UserService:
                 role=UserRole.STUDENT.value,
                 is_verified=True,
             )
-        else:
-            # Create new user
-            user = User(
-                phone=phone,
-                first_name=first_name,
-                last_name=last_name,
-                telegram_id=telegram_id,
-                telegram_username=telegram_username,
-                role=UserRole.STUDENT.value,
-                is_verified=True,
-            )
-            await self.repo.create(user)
 
         return user
 
