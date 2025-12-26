@@ -38,7 +38,6 @@ class UserRepository:
 
     async def restore(self, user: User) -> User:
         """Restore soft-deleted user by setting deleted_at to None."""
-        from datetime import datetime
         user.deleted_at = None
         self.session.add(user)
         await self.session.flush()
