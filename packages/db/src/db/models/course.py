@@ -24,6 +24,7 @@ from shared.constants import CourseStatus
 if TYPE_CHECKING:
     from db.models.lesson import Lesson
     from db.models.enrollment import Enrollment
+    from db.models.test import Test
 
 
 class Course(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, SlugMixin):
@@ -68,6 +69,11 @@ class Course(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, SlugMixin):
     # Relationships
     groups: Mapped[List["Group"]] = relationship(
         "Group",
+        back_populates="course",
+        lazy="selectin",
+    )
+    tests: Mapped[List["Test"]] = relationship(
+        "Test",
         back_populates="course",
         lazy="selectin",
     )

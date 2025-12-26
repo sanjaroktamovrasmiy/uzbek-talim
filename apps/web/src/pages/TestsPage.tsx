@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText,
@@ -8,70 +8,76 @@ import {
   ArrowRight,
   Filter,
   Search,
+  Loader2,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { testsApi } from '@/services/api';
 
 interface Test {
   id: string;
   title: string;
-  course: string;
+  course_name: string;
+  course_id: string;
   duration: number; // minutes
-  status: 'available' | 'completed' | 'pending';
+  max_score: number;
+  passing_score: number;
+  available_from?: string;
+  available_until?: string;
+  status?: 'available' | 'completed' | 'pending';
   score?: number;
-  maxScore: number;
-  deadline?: string;
-  completedAt?: string;
+  completed_at?: string;
 }
-
-// Mock data
-const mockTests: Test[] = [
-  {
-    id: '1',
-    title: 'Ingliz tili - Vocabulary Test',
-    course: 'Ingliz tili - Boshlang\'ich',
-    duration: 30,
-    status: 'completed',
-    score: 85,
-    maxScore: 100,
-    completedAt: '2024-12-20',
-  },
-  {
-    id: '2',
-    title: 'Matematika - Algebra Test',
-    course: 'Matematika - Abituriyent',
-    duration: 45,
-    status: 'available',
-    maxScore: 100,
-    deadline: '2024-12-28',
-  },
-  {
-    id: '3',
-    title: 'Dasturlash - Python Basics',
-    course: 'Dasturlash asoslari',
-    duration: 60,
-    status: 'pending',
-    maxScore: 100,
-    deadline: '2025-01-05',
-  },
-];
 
 export function TestsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'completed' | 'pending'>('all');
+  const [tests, setTests] = useState<Test[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredTests = mockTests.filter((test) => {
+  useEffect(() => {
+    loadTests();
+  }, []);
+
+  const loadTests = async () => {
+    setIsLoading(true);
+    try {
+      const data = await testsApi.getTests();
+      setTests(data || []);
+    } catch (error: any) {
+      console.error('Error loading tests:', error);
+      toast.error(error.response?.data?.detail || 'Testlarni yuklashda xatolik');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getTestStatus = (test: Test): 'available' | 'completed' | 'pending' => {
+    if (test.completed_at) return 'completed';
+    const now = new Date();
+    if (test.available_until && new Date(test.available_until) < now) return 'pending';
+    if (test.available_from && new Date(test.available_from) > now) return 'pending';
+    return 'available';
+  };
+
+  const filteredTests = tests.map(test => ({
+    ...test,
+    status: test.status || getTestStatus(test),
+  })).filter((test) => {
     const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.course.toLowerCase().includes(searchQuery.toLowerCase());
+      test.course_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || test.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status: Test['status'], score?: number) => {
+  const getStatusBadge = (test: Test) => {
+    const status = test.status || getTestStatus(test);
     switch (status) {
       case 'completed':
+        const percentage = test.score !== undefined ? Math.round((test.score / test.max_score) * 100) : 0;
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-green-500/20 text-green-400">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Tugallangan {score !== undefined && `(${score}%)`}
+            Tugallangan {test.score !== undefined && `(${percentage}%)`}
           </span>
         );
       case 'available':
@@ -101,6 +107,18 @@ export function TestsPage() {
       day: 'numeric',
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="py-8 md:py-12">
+        <div className="container-custom">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 md:py-12">
@@ -156,73 +174,76 @@ export function TestsPage() {
               </p>
             </div>
           ) : (
-            filteredTests.map((test) => (
-              <div key={test.id} className="card card-hover">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  {/* Test Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-6 h-6 text-primary-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold mb-2">{test.title}</h3>
-                        <p className="text-slate-400 mb-3">{test.course}</p>
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-4 h-4" />
-                            {test.duration} daqiqa
-                          </span>
-                          {test.deadline && (
-                            <span>
-                              Muddati: {formatDate(test.deadline)}
+            filteredTests.map((test) => {
+              const status = test.status || getTestStatus(test);
+              return (
+                <div key={test.id} className="card card-hover">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    {/* Test Info */}
+                    <div className="flex-1">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-6 h-6 text-primary-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold mb-2">{test.title}</h3>
+                          <p className="text-slate-400 mb-3">{test.course_name}</p>
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="w-4 h-4" />
+                              {test.duration} daqiqa
                             </span>
-                          )}
-                          {test.completedAt && (
-                            <span>
-                              Tugallangan: {formatDate(test.completedAt)}
-                            </span>
-                          )}
-                          {test.score !== undefined && (
-                            <span className="text-primary-400 font-medium">
-                              Ball: {test.score}/{test.maxScore}
-                            </span>
-                          )}
+                            {test.available_until && (
+                              <span>
+                                Muddati: {formatDate(test.available_until)}
+                              </span>
+                            )}
+                            {test.completed_at && (
+                              <span>
+                                Tugallangan: {formatDate(test.completed_at)}
+                              </span>
+                            )}
+                            {test.score !== undefined && (
+                              <span className="text-primary-400 font-medium">
+                                Ball: {test.score}/{test.max_score}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col items-end gap-3">
-                    {getStatusBadge(test.status, test.score)}
-                    {test.status === 'available' && (
-                      <Link
-                        to={`/tests/${test.id}`}
-                        className="btn-primary inline-flex items-center gap-2"
-                      >
-                        Testni boshlash
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                    )}
-                    {test.status === 'completed' && (
-                      <Link
-                        to={`/tests/${test.id}/results`}
-                        className="btn-secondary inline-flex items-center gap-2"
-                      >
-                        Natijalarni ko'rish
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                    )}
-                    {test.status === 'pending' && (
-                      <span className="text-slate-400 text-sm">
-                        Hali ochilmagan
-                      </span>
-                    )}
+                    {/* Actions */}
+                    <div className="flex flex-col items-end gap-3">
+                      {getStatusBadge(test)}
+                      {status === 'available' && (
+                        <Link
+                          to={`/tests/${test.id}`}
+                          className="btn-primary inline-flex items-center gap-2"
+                        >
+                          Testni boshlash
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      )}
+                      {status === 'completed' && (
+                        <Link
+                          to={`/tests/${test.id}/results`}
+                          className="btn-secondary inline-flex items-center gap-2"
+                        >
+                          Natijalarni ko'rish
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      )}
+                      {status === 'pending' && (
+                        <span className="text-slate-400 text-sm">
+                          Hali ochilmagan
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -235,7 +256,7 @@ export function TestsPage() {
               </div>
               <div>
                 <p className="text-slate-400 text-sm mb-1">Jami testlar</p>
-                <p className="text-2xl font-bold">{mockTests.length}</p>
+                <p className="text-2xl font-bold">{tests.length}</p>
               </div>
             </div>
           </div>
@@ -248,7 +269,7 @@ export function TestsPage() {
               <div>
                 <p className="text-slate-400 text-sm mb-1">Tugallangan</p>
                 <p className="text-2xl font-bold">
-                  {mockTests.filter((t) => t.status === 'completed').length}
+                  {tests.filter((t) => (t.status || getTestStatus(t)) === 'completed').length}
                 </p>
               </div>
             </div>
@@ -262,7 +283,7 @@ export function TestsPage() {
               <div>
                 <p className="text-slate-400 text-sm mb-1">Mavjud testlar</p>
                 <p className="text-2xl font-bold">
-                  {mockTests.filter((t) => t.status === 'available').length}
+                  {tests.filter((t) => (t.status || getTestStatus(t)) === 'available').length}
                 </p>
               </div>
             </div>
@@ -272,4 +293,3 @@ export function TestsPage() {
     </div>
   );
 }
-

@@ -9,6 +9,8 @@ from db.models.enrollment import Enrollment
 from db.models.attendance import Attendance
 from db.models.payment import Payment
 from db.models.notification import Notification
+from db.models.test import Test, TestQuestion, TestQuestionOption
+from db.models.test_result import TestResult
 
 __all__ = [
     "User",
@@ -19,5 +21,9 @@ __all__ = [
     "Attendance",
     "Payment",
     "Notification",
+    "Test",
+    "TestQuestion",
+    "TestQuestionOption",
+    "TestResult",
 ]
 

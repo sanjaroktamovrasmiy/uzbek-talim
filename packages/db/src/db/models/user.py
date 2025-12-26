@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from db.models.enrollment import Enrollment
     from db.models.payment import Payment
     from db.models.notification import Notification
+    from db.models.test_result import TestResult
 
 
 class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
@@ -84,6 +85,11 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     notifications: Mapped[List["Notification"]] = relationship(
         "Notification",
+        back_populates="user",
+        lazy="selectin",
+    )
+    test_results: Mapped[List["TestResult"]] = relationship(
+        "TestResult",
         back_populates="user",
         lazy="selectin",
     )

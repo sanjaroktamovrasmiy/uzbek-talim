@@ -258,3 +258,31 @@ export const adminPaymentsApi = {
   },
 };
 
+// Tests API
+export const testsApi = {
+  getTests: async () => {
+    const response = await api.get('/tests');
+    return response.data;
+  },
+
+  getTest: async (testId: string) => {
+    const response = await api.get(`/tests/${testId}`);
+    return response.data;
+  },
+
+  startTest: async (testId: string) => {
+    const response = await api.post(`/tests/${testId}/start`);
+    return response.data;
+  },
+
+  submitTest: async (testId: string, answers: Record<string, string[]>) => {
+    const response = await api.post(`/tests/${testId}/submit`, { answers });
+    return response.data;
+  },
+
+  getResult: async (testId: string) => {
+    const response = await api.get(`/tests/${testId}/result`);
+    return response.data;
+  },
+};
+
