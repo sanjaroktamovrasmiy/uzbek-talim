@@ -98,6 +98,11 @@ export const authApi = {
     });
     return response.data;
   },
+
+  deleteAccount: async () => {
+    const response = await api.delete('/auth/account');
+    return response.data;
+  },
 };
 
 // Courses API

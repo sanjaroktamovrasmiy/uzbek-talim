@@ -13,8 +13,11 @@ import {
   MessageSquare,
   Key,
   Loader2,
-  Camera
+  Camera,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 interface ProfileForm {
@@ -30,11 +33,14 @@ interface ChangePasswordForm {
 }
 
 export function ProfilePage() {
-  const { user, setUser } = useAuthStore();
+  const { user, setUser, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -151,6 +157,20 @@ export function ProfilePage() {
       email: user?.email || '',
     });
     setIsEditing(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      await authApi.deleteAccount();
+      toast.success('Hisob muvaffaqiyatli o\'chirildi');
+      logout();
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Hisobni o\'chirishda xatolik');
+      setIsDeletingAccount(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   return (
@@ -432,6 +452,61 @@ export function ProfilePage() {
                   </form>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Danger Zone - Delete Account */}
+        <div className="card border-red-500/20 bg-red-500/5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-6 h-6 text-red-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold mb-1 text-red-400">Xavfli zona</h3>
+              <p className="text-sm text-slate-400 mb-4">
+                Hisobingizni o'chirish. Bu amalni qaytarib bo'lmaydi va barcha ma'lumotlaringiz yo'qoladi.
+              </p>
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="btn-secondary border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Hisobni o'chirish
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-400 font-medium">
+                    Hisobingizni o'chirishni tasdiqlaysizmi?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={isDeletingAccount}
+                      className="btn-secondary border-red-500/50 bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:border-red-500"
+                    >
+                      {isDeletingAccount ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      Ha, o'chirish
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setIsDeletingAccount(false);
+                      }}
+                      disabled={isDeletingAccount}
+                      className="btn-secondary"
+                    >
+                      <X className="w-4 h-4" />
+                      Bekor qilish
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
