@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import clsx from 'clsx';
 import { BrandLogo } from '@/components/common/BrandLogo';
@@ -47,35 +47,44 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Auth Buttons */}
-          <div className="hidden md:flex items-center gap-3">
-            {isAuthenticated ? (
-              <div className="flex items-center gap-3">
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-colors"
-                >
-                  <User className="w-4 h-4" />
-                  {user?.first_name}
-                </Link>
-                <button
-                  onClick={logout}
-                  className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <Link to="/login" className="btn-ghost text-sm">
-                  Kirish
-                </Link>
-                <Link to="/register" className="btn-primary text-sm">
-                  Ro'yxatdan o'tish
-                </Link>
-              </>
-            )}
-          </div>
+                 {/* Auth Buttons */}
+                 <div className="hidden md:flex items-center gap-3">
+                   {isAuthenticated ? (
+                     <div className="flex items-center gap-3">
+                       {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                         <Link
+                           to="/admin"
+                           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors border border-red-500/20"
+                         >
+                           <Shield className="w-4 h-4" />
+                           Admin
+                         </Link>
+                       )}
+                       <Link
+                         to="/dashboard"
+                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-colors"
+                       >
+                         <User className="w-4 h-4" />
+                         {user?.first_name}
+                       </Link>
+                       <button
+                         onClick={logout}
+                         className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors"
+                       >
+                         <LogOut className="w-4 h-4" />
+                       </button>
+                     </div>
+                   ) : (
+                     <>
+                       <Link to="/login" className="btn-ghost text-sm">
+                         Kirish
+                       </Link>
+                       <Link to="/register" className="btn-primary text-sm">
+                         Ro'yxatdan o'tish
+                       </Link>
+                     </>
+                   )}
+                 </div>
 
           {/* Mobile Menu Button */}
           <button

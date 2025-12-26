@@ -1,0 +1,20 @@
+[Unit]
+Description=Uzbek Talim Web Frontend Service
+After=network.target uzbek-talim-api.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/uzbek-talim/apps/web
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/ubuntu/.nvm/versions/node/v20.11.0/bin"
+ExecStart=/usr/bin/npm run dev
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=uzbek-talim-web
+
+[Install]
+WantedBy=multi-user.target
+

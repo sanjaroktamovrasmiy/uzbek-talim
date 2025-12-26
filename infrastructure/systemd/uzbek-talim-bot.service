@@ -1,0 +1,22 @@
+[Unit]
+Description=Uzbek Talim Telegram Bot Service
+After=network.target postgresql.service redis.service uzbek-talim-api.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/uzbek-talim/apps/bot
+Environment="PATH=/home/ubuntu/uzbek-talim/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/ubuntu/uzbek-talim/apps/bot:/home/ubuntu/uzbek-talim/packages/shared/src:/home/ubuntu/uzbek-talim/packages/db/src:/home/ubuntu/uzbek-talim"
+EnvironmentFile=/home/ubuntu/uzbek-talim/.env
+ExecStart=/home/ubuntu/uzbek-talim/.venv/bin/python3 -m src.main
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=uzbek-talim-bot
+
+[Install]
+WantedBy=multi-user.target
+

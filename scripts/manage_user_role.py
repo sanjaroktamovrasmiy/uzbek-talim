@@ -62,7 +62,12 @@ async def update_user_role(phone: str, role: str) -> User:
         raise ValueError(f"Invalid role. Must be one of: {', '.join(valid_roles)}")
     
     async with AsyncSessionLocal() as session:
-        user = await get_user_by_phone(phone)
+        from sqlalchemy import select
+        result = await session.execute(
+            select(User).where(User.phone == phone, User.deleted_at.is_(None))
+        )
+        user = result.scalar_one_or_none()
+        
         if not user:
             raise ValueError(f"User with phone {phone} not found")
         

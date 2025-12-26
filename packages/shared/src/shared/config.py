@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     api_port: int = Field(default=8000, description="API port")
     api_prefix: str = Field(default="/api/v1", description="API prefix")
     api_cors_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:5173"],
+        default=["http://localhost:3000", "http://localhost:5173", "https://uzbek-talim.duckdns.org", "http://uzbek-talim.duckdns.org"],
         description="CORS origins",
     )
 

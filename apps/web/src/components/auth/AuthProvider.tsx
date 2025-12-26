@@ -7,28 +7,43 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { token, setUser, setLoading, logout } = useAuthStore();
+  const { token, user, setUser, setLoading, logout, isAuthenticated } = useAuthStore();
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
-      if (token) {
-        try {
-          // Token mavjud, user ma'lumotlarini olish
-          const userData = await authApi.getMe();
-          setUser(userData);
-        } catch (error) {
-          // Token yaroqsiz, logout qilish
-          console.error('Auth init failed:', error);
-          logout();
+      // Token localStorage'dan o'qilgan bo'lishi mumkin (auto remember me)
+      const storedToken = token;
+      
+      if (storedToken) {
+        // Token mavjud, lekin user ma'lumotlari yo'q bo'lsa, olish
+        if (!user || !isAuthenticated) {
+          try {
+            setLoading(true);
+            // Token mavjud, user ma'lumotlarini olish
+            const userData = await authApi.getMe();
+            setUser(userData);
+          } catch (error) {
+            // Token yaroqsiz, logout qilish
+            console.error('Auth init failed:', error);
+            logout();
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          // User ma'lumotlari allaqachon mavjud
+          setLoading(false);
         }
+      } else {
+        // Token yo'q, yuklash tugadi
+        setLoading(false);
       }
-      setLoading(false);
+      
       setInitialized(true);
     };
 
     initAuth();
-  }, [token, setUser, setLoading, logout]);
+  }, []); // Faqat bir marta ishga tushadi
 
   // Boshlang'ich yuklash
   if (!initialized) {

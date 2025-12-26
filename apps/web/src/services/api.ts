@@ -138,5 +138,117 @@ export const usersApi = {
     });
     return response.data;
   },
+
+  // Admin APIs
+  listUsers: async (params?: {
+    page?: number;
+    size?: number;
+    role?: string;
+    search?: string;
+    is_active?: boolean;
+  }) => {
+    const response = await api.get('/users', { params });
+    return response.data;
+  },
+
+  getUser: async (userId: string) => {
+    const response = await api.get(`/users/${userId}`);
+    return response.data;
+  },
+
+  createUser: async (data: {
+    phone: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    role?: string;
+    password?: string;
+  }) => {
+    const response = await api.post('/users', data);
+    return response.data;
+  },
+
+  updateUser: async (userId: string, data: Partial<{
+    first_name: string;
+    last_name: string;
+    email: string;
+    role: string;
+    is_active: boolean;
+  }>) => {
+    const response = await api.patch(`/users/${userId}`, data);
+    return response.data;
+  },
+
+  deleteUser: async (userId: string) => {
+    const response = await api.delete(`/users/${userId}`);
+    return response.data;
+  },
+};
+
+// Admin Courses API
+export const adminCoursesApi = {
+  listCourses: async (params?: {
+    page?: number;
+    size?: number;
+    category?: string;
+    status?: string;
+    search?: string;
+  }) => {
+    const response = await api.get('/courses', { params });
+    return response.data;
+  },
+
+  getCourse: async (courseId: string) => {
+    const response = await api.get(`/courses/${courseId}`);
+    return response.data;
+  },
+
+  createCourse: async (data: any) => {
+    const response = await api.post('/courses', data);
+    return response.data;
+  },
+
+  updateCourse: async (courseId: string, data: any) => {
+    const response = await api.patch(`/courses/${courseId}`, data);
+    return response.data;
+  },
+
+  deleteCourse: async (courseId: string) => {
+    const response = await api.delete(`/courses/${courseId}`);
+    return response.data;
+  },
+
+  publishCourse: async (courseId: string) => {
+    const response = await api.post(`/courses/${courseId}/publish`);
+    return response.data;
+  },
+};
+
+// Admin Payments API
+export const adminPaymentsApi = {
+  listPayments: async (params?: {
+    page?: number;
+    size?: number;
+    user_id?: string;
+    status?: string;
+  }) => {
+    const response = await api.get('/payments', { params });
+    return response.data;
+  },
+
+  getPayment: async (paymentId: string) => {
+    const response = await api.get(`/payments/${paymentId}`);
+    return response.data;
+  },
+
+  createPayment: async (data: any) => {
+    const response = await api.post('/payments', data);
+    return response.data;
+  },
+
+  confirmPayment: async (paymentId: string) => {
+    const response = await api.post(`/payments/${paymentId}/confirm`);
+    return response.data;
+  },
 };
 

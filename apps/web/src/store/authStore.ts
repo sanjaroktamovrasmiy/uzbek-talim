@@ -53,13 +53,16 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false 
         }),
 
-      logout: () =>
+      logout: () => {
+        // Remember me telefon raqamini o'chirish
+        localStorage.removeItem('remembered_phone');
         set({ 
           user: null, 
           token: null, 
           refreshToken: null,
           isAuthenticated: false 
-        }),
+        });
+      },
 
       setLoading: (isLoading) =>
         set({ isLoading }),

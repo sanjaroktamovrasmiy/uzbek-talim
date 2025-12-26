@@ -23,7 +23,8 @@ from src.schemas.auth import (
 )
 from src.schemas.user import UserResponse
 from src.services.auth_service import AuthService
-from src.core.deps import get_auth_service, get_current_user
+from src.services.user_service import UserService
+from src.core.deps import get_auth_service, get_current_user, get_user_service
 from db.models import User
 
 
@@ -164,4 +165,16 @@ async def change_password(
         new_password=request.new_password,
     )
     return ChangePasswordResponse(**result)
+
+
+@router.delete("/account")
+async def delete_account(
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> dict:
+    """
+    Delete current user's account (soft delete).
+    """
+    await user_service.delete_user(current_user.id)
+    return {"message": "Account deleted successfully"}
 

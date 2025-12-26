@@ -1,0 +1,21 @@
+[Unit]
+Description=Uzbek Talim API Service
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/uzbek-talim
+Environment="PATH=/home/ubuntu/uzbek-talim/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/ubuntu/uzbek-talim/apps/api:/home/ubuntu/uzbek-talim/packages/shared/src:/home/ubuntu/uzbek-talim/packages/db/src:/home/ubuntu/uzbek-talim"
+ExecStart=/home/ubuntu/uzbek-talim/.venv/bin/uvicorn src.main:app --app-dir /home/ubuntu/uzbek-talim/apps/api --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=uzbek-talim-api
+
+[Install]
+WantedBy=multi-user.target
+

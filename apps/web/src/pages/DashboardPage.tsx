@@ -7,14 +7,15 @@ import {
   TrendingUp,
   Clock,
   CheckCircle2,
-  MessageSquare
+  MessageSquare,
+  Shield
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 const quickLinks = [
   { to: '/schedule', icon: Calendar, label: 'Dars jadvali', color: 'from-blue-500 to-blue-600', description: 'Kelgusi darslar' },
   { to: '/payments', icon: CreditCard, label: "To'lovlar", color: 'from-green-500 to-green-600', description: "To'lov tarixi" },
-  { to: '/courses', icon: BookOpen, label: 'Kurslar', color: 'from-purple-500 to-purple-600', description: "Barcha kurslar" },
+  { to: '/app/courses', icon: BookOpen, label: 'Kurslar', color: 'from-purple-500 to-purple-600', description: "Barcha kurslar" },
   { to: '/profile', icon: User, label: 'Profil', color: 'from-orange-500 to-orange-600', description: "Shaxsiy ma'lumotlar" },
 ];
 
@@ -24,6 +25,7 @@ const recentActivities = [
 
 export function DashboardPage() {
   const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -112,6 +114,31 @@ export function DashboardPage() {
           </div>
         </div>
 
+        {/* Admin Panel Link */}
+        {isAdmin && (
+          <div className="mb-6">
+            <Link
+              to="/admin"
+              className="card-hover group bg-gradient-to-r from-red-500/10 to-orange-600/10 border-red-500/20"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <Shield className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Admin Panel</h3>
+                  <p className="text-sm text-slate-400">
+                    Tizimni boshqarish va sozlamalarni o'zgartirish
+                  </p>
+                </div>
+                <div className="text-red-400 group-hover:text-red-300">
+                  →
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}
+
         {/* Quick Links & Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Quick Links */}
@@ -194,7 +221,7 @@ export function DashboardPage() {
           <p className="text-slate-400 mb-6 max-w-md mx-auto">
             Kursga yoziling va professional ta'limni boshlang! Bizning tajribali ustozlarimiz sizga yordam berishadi.
           </p>
-          <Link to="/courses" className="btn-primary inline-flex">
+          <Link to="/app/courses" className="btn-primary inline-flex">
             <BookOpen className="w-5 h-5" />
             Kurslarni ko'rish
           </Link>

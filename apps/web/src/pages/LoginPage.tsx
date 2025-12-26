@@ -9,6 +9,7 @@ import { authApi } from '@/services/api';
 interface LoginForm {
   phone: string;
   password: string;
+  rememberMe: boolean;
 }
 
 export function LoginPage() {
@@ -28,14 +29,26 @@ export function LoginPage() {
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<LoginForm>();
+  } = useForm<LoginForm>({
+    defaultValues: {
+      rememberMe: false,
+    },
+  });
 
-  // Check if redirected from register page
+  // Check if redirected from register page or load remembered phone
   useEffect(() => {
     const state = location.state as { phone?: string; message?: string } | null;
     if (state?.phone) {
       setValue('phone', state.phone);
       setTelegramPhone(state.phone);
+    } else {
+      // Avtomatik login - eslab qolgan telefon raqamni yuklash
+      const rememberedPhone = localStorage.getItem('remembered_phone');
+      if (rememberedPhone) {
+        setValue('phone', rememberedPhone);
+        setTelegramPhone(rememberedPhone);
+        setValue('rememberMe', true);
+      }
     }
     if (state?.message) {
       toast.error(state.message, { duration: 6000 });
@@ -49,8 +62,18 @@ export function LoginPage() {
       const user = await authApi.getMe(response.access_token);
       // Remember me - token va user localStorage'da saqlanadi (logout qilinmaguncha)
       login(user, response.access_token, response.refresh_token);
+      
+      // Remember me belgilangan bo'lsa, telefon raqamni saqlash
+      if (data.rememberMe) {
+        localStorage.setItem('remembered_phone', data.phone);
+      } else {
+        localStorage.removeItem('remembered_phone');
+      }
+      
       toast.success('Muvaffaqiyatli kirdingiz!');
-      navigate('/dashboard');
+      // Oldingi sahifaga yoki dashboard'ga yo'naltirish
+      const from = (location.state as { from?: string } | null)?.from || '/dashboard';
+      navigate(from, { replace: true });
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || "Xatolik yuz berdi";
       
@@ -112,8 +135,14 @@ export function LoginPage() {
         const user = await authApi.getMe(response.access_token);
         // Remember me - logout qilinmaguncha saqlanadi
         login(user, response.access_token, response.refresh_token);
+        
+        // Telegram orqali kirishda ham telefon raqamni eslab qolish
+        localStorage.setItem('remembered_phone', telegramPhone);
+        
         toast.success('Muvaffaqiyatli kirdingiz!');
-        navigate('/dashboard');
+        // Oldingi sahifaga yoki dashboard'ga yo'naltirish
+        const from = (location.state as { from?: string } | null)?.from || '/dashboard';
+        navigate(from, { replace: true });
       } else {
         toast.error("Token olinmadi. Qaytadan urinib ko'ring.");
       }
@@ -217,6 +246,18 @@ export function LoginPage() {
           {errors.password && (
             <p className="text-red-400 text-sm mt-1">{errors.password.message}</p>
           )}
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            {...register('rememberMe')}
+            className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-primary-500 focus:ring-primary-500 focus:ring-2"
+          />
+          <label htmlFor="rememberMe" className="ml-2 text-sm text-slate-300 cursor-pointer">
+            Meni eslab qol
+          </label>
         </div>
 
         <button

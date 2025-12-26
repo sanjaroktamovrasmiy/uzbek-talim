@@ -8,8 +8,15 @@ import './styles/globals.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes - ma'lumotlar 5 daqiqa davomida yangi hisoblanadi
+      gcTime: 10 * 60 * 1000, // 10 minutes - cache 10 daqiqa davomida saqlanadi (eski cacheTime)
+      retry: 1, // 1 marta qayta urinish
+      refetchOnWindowFocus: false, // Oyna fokuslanganda avtomatik yangilash o'chirilgan
+      refetchOnReconnect: true, // Internet qayta ulanganda yangilash
+      refetchOnMount: true, // Komponent mount bo'lganda yangilash
+    },
+    mutations: {
+      retry: 0, // Mutation'lar uchun qayta urinish yo'q
     },
   },
 });
