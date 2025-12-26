@@ -112,9 +112,45 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
-            cd /opt/uzbek-talim
+            cd /home/ubuntu/uzbek-talim
+            
+            # Pull latest code
+            echo "📥 Pulling latest code from main branch..."
             git pull origin main
-            docker-compose pull
-            docker-compose up -d
-            docker system prune -f
+            
+            # Check if using Docker Compose
+            if [ -f "docker-compose.yml" ] && docker-compose ps > /dev/null 2>&1; then
+              echo "🐳 Using Docker Compose deployment..."
+              docker-compose pull
+              docker-compose up -d --build
+              docker system prune -f
+            else
+              echo "⚙️  Using systemd services deployment..."
+              
+              # Restart API service if exists
+              if systemctl is-active --quiet uzbek-talim-api.service; then
+                echo "🔄 Restarting API service..."
+                sudo systemctl restart uzbek-talim-api.service
+              fi
+              
+              # Restart Bot service if exists
+              if systemctl is-active --quiet uzbek-talim-bot.service; then
+                echo "🔄 Restarting Bot service..."
+                sudo systemctl restart uzbek-talim-bot.service
+              fi
+              
+              # Restart Web service if exists (if using systemd)
+              if systemctl is-active --quiet uzbek-talim-web.service; then
+                echo "🔄 Restarting Web service..."
+                sudo systemctl restart uzbek-talim-web.service
+              fi
+              
+              # If using nginx directly, reload it
+              if systemctl is-active --quiet nginx.service; then
+                echo "🔄 Reloading Nginx..."
+                sudo systemctl reload nginx
+              fi
+            fi
+            
+            echo "✅ Deployment complete!"
 

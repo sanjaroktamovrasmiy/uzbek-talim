@@ -20,6 +20,7 @@ export function LoginPage() {
   const [telegramCode, setTelegramCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
+  const [telegramRememberMe, setTelegramRememberMe] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
@@ -48,6 +49,7 @@ export function LoginPage() {
         setValue('phone', rememberedPhone);
         setTelegramPhone(rememberedPhone);
         setValue('rememberMe', true);
+        setTelegramRememberMe(true);
       }
     }
     if (state?.message) {
@@ -136,8 +138,12 @@ export function LoginPage() {
         // Remember me - logout qilinmaguncha saqlanadi
         login(user, response.access_token, response.refresh_token);
         
-        // Telegram orqali kirishda ham telefon raqamni eslab qolish
-        localStorage.setItem('remembered_phone', telegramPhone);
+        // Telegram orqali kirishda ham telefon raqamni eslab qolish (agar remember me belgilangan bo'lsa)
+        if (telegramRememberMe) {
+          localStorage.setItem('remembered_phone', telegramPhone);
+        } else {
+          localStorage.removeItem('remembered_phone');
+        }
         
         toast.success('Muvaffaqiyatli kirdingiz!');
         // Oldingi sahifaga yoki dashboard'ga yo'naltirish
@@ -322,6 +328,19 @@ export function LoginPage() {
                 <p className="text-slate-400 text-sm mt-2 text-center">
                   Kod Telegram orqali yuborildi
                 </p>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="telegramRememberMe"
+                  checked={telegramRememberMe}
+                  onChange={(e) => setTelegramRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-primary-500 focus:ring-primary-500 focus:ring-2"
+                />
+                <label htmlFor="telegramRememberMe" className="ml-2 text-sm text-slate-300 cursor-pointer">
+                  Meni eslab qol
+                </label>
               </div>
 
               <button
