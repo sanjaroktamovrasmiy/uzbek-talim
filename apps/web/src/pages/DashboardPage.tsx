@@ -8,12 +8,14 @@ import {
   Clock,
   CheckCircle2,
   MessageSquare,
-  Shield
+  Shield,
+  FileText,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 const quickLinks = [
   { to: '/schedule', icon: Calendar, label: 'Dars jadvali', color: 'from-blue-500 to-blue-600', description: 'Kelgusi darslar' },
+  { to: '/tests', icon: FileText, label: 'Testlar', color: 'from-indigo-500 to-indigo-600', description: 'Mavjud testlar' },
   { to: '/payments', icon: CreditCard, label: "To'lovlar", color: 'from-green-500 to-green-600', description: "To'lov tarixi" },
   { to: '/app/courses', icon: BookOpen, label: 'Kurslar', color: 'from-purple-500 to-purple-600', description: "Barcha kurslar" },
   { to: '/profile', icon: User, label: 'Profil', color: 'from-orange-500 to-orange-600', description: "Shaxsiy ma'lumotlar" },

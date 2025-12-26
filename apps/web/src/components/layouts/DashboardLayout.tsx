@@ -12,6 +12,7 @@ import {
   Home,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { BrandLogo } from '@/components/common/BrandLogo';
@@ -19,6 +20,7 @@ import { BrandLogo } from '@/components/common/BrandLogo';
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Calendar, label: 'Dars jadvali', path: '/schedule' },
+  { icon: FileText, label: 'Testlar', path: '/tests' },
   { icon: CreditCard, label: "To'lovlar", path: '/payments' },
   { icon: BookOpen, label: 'Kurslar', path: '/app/courses' },
   { icon: User, label: 'Profil', path: '/profile' },

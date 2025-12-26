@@ -13,6 +13,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SchedulePage } from './pages/SchedulePage';
+import { TestsPage } from './pages/TestsPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
@@ -49,6 +50,7 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="schedule" element={<SchedulePage />} />
+          <Route path="tests" element={<TestsPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           {/* Dashboard ichida alohida courses sahifalari */}
           <Route path="app/courses" element={<DashboardCoursesPage />} />
