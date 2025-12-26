@@ -91,6 +91,7 @@ class AuthService:
             first_name=request.first_name,
             last_name=request.last_name,
             password_hash=hash_password(request.password),
+            role=request.role.value,
             is_verified=False,
         )
         await self.user_repo.create(user)

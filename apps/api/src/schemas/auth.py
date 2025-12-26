@@ -5,6 +5,7 @@ Authentication schemas.
 from pydantic import BaseModel, Field, field_validator
 
 from shared.utils import validate_phone, format_phone
+from shared.constants import UserRole
 
 
 class RegisterRequest(BaseModel):
@@ -14,6 +15,7 @@ class RegisterRequest(BaseModel):
     first_name: str = Field(..., min_length=2, max_length=100)
     last_name: str = Field(..., min_length=2, max_length=100)
     password: str = Field(..., min_length=6, max_length=100)
+    role: UserRole = Field(default=UserRole.STUDENT, description="User role")
 
     @field_validator("phone")
     @classmethod

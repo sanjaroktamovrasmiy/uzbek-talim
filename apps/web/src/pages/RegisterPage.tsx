@@ -12,6 +12,7 @@ interface RegisterForm {
   last_name: string;
   password: string;
   confirmPassword: string;
+  role: 'student' | 'teacher';
 }
 
 export function RegisterPage() {
@@ -31,9 +32,14 @@ export function RegisterPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<RegisterForm>();
+  } = useForm<RegisterForm>({
+    defaultValues: {
+      role: 'student',
+    },
+  });
 
   const password = watch('password');
+  const selectedRole = watch('role');
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
@@ -43,6 +49,7 @@ export function RegisterPage() {
         first_name: data.first_name,
         last_name: data.last_name,
         password: data.password,
+        role: data.role,
       });
       setRegisteredPhone(data.phone);
       setRegisteredPassword(data.password);
@@ -349,6 +356,60 @@ export function RegisterPage() {
           {errors.confirmPassword && (
             <p className="text-red-400 text-sm mt-1">{errors.confirmPassword.message}</p>
           )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">
+            Men kimman?
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label
+              className={`
+                relative flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all
+                ${selectedRole === 'student'
+                  ? 'border-primary-500 bg-primary-500/10'
+                  : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                }
+              `}
+            >
+              <input
+                type="radio"
+                value="student"
+                {...register('role')}
+                className="sr-only"
+              />
+              <div className="text-center">
+                <div className="text-2xl mb-1">👨‍🎓</div>
+                <div className={`font-medium ${selectedRole === 'student' ? 'text-primary-400' : 'text-slate-300'}`}>
+                  O'quvchi
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Kurslarga yozilish</div>
+              </div>
+            </label>
+            <label
+              className={`
+                relative flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all
+                ${selectedRole === 'teacher'
+                  ? 'border-primary-500 bg-primary-500/10'
+                  : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                }
+              `}
+            >
+              <input
+                type="radio"
+                value="teacher"
+                {...register('role')}
+                className="sr-only"
+              />
+              <div className="text-center">
+                <div className="text-2xl mb-1">👨‍🏫</div>
+                <div className={`font-medium ${selectedRole === 'teacher' ? 'text-primary-400' : 'text-slate-300'}`}>
+                  Ustoz
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Kurslar yaratish</div>
+              </div>
+            </label>
+          </div>
         </div>
 
         <button

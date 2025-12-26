@@ -53,6 +53,7 @@ export const authApi = {
     first_name: string;
     last_name: string;
     password: string;
+    role?: 'student' | 'teacher';
   }) => {
     const response = await api.post('/auth/register', data);
     return response.data;
