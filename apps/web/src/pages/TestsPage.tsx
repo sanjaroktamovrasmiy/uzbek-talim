@@ -4,13 +4,11 @@ import {
   FileText,
   Clock,
   CheckCircle2,
-  XCircle,
   AlertCircle,
   ArrowRight,
   Filter,
   Search,
 } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
 
 interface Test {
   id: string;
@@ -57,7 +55,6 @@ const mockTests: Test[] = [
 ];
 
 export function TestsPage() {
-  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'completed' | 'pending'>('all');
 
