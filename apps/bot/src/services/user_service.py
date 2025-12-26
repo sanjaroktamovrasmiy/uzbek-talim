@@ -39,11 +39,19 @@ class UserService:
             # Check if user exists but was deleted
             deleted_user = await self.repo.get_by_telegram_id_include_deleted(telegram_id)
             if deleted_user:
-                # Restore deleted user
+                # Restore deleted user but reset to guest status (since they deleted their account)
                 user = await self.repo.restore(deleted_user)
-                # Update username if provided
-                if telegram_username and user.telegram_username != telegram_username:
-                    user = await self.repo.update(user, telegram_username=telegram_username)
+                # Reset user to guest status with placeholder phone
+                # Generate unique placeholder phone based on telegram_id to avoid conflicts
+                placeholder_phone = f"+998{telegram_id % 1000000000:09d}"
+                await self.repo.update(
+                    user,
+                    phone=placeholder_phone,
+                    telegram_username=telegram_username,
+                    role=UserRole.GUEST.value,
+                    is_verified=False,
+                    # Keep first_name and last_name as they were (Telegram user info)
+                )
             else:
                 # Create new user with placeholder phone
                 user = User(
