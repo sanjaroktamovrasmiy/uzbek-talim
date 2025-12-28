@@ -48,7 +48,7 @@ export function TestDetailPage() {
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [testStarted, setTestStarted] = useState(false);
-  const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const [, setStartedAt] = useState<Date | null>(null);
   const [accessKey, setAccessKey] = useState<string>('');
   const [showAccessKeyModal, setShowAccessKeyModal] = useState(false);
   const [error, setError] = useState<string | null>(null);

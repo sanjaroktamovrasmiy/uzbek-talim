@@ -102,6 +102,9 @@ services:
     build:
       context: .
       dockerfile: infrastructure/docker/web.Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000/api/v1
+        VITE_APP_NAME: Uzbek Ta'lim
     container_name: uzbek_talim_web
     restart: unless-stopped
     ports:

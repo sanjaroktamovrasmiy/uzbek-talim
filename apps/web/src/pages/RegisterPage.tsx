@@ -498,22 +498,26 @@ export function RegisterPage() {
           <button
             type="button"
             onClick={() => {
-              // Clear localStorage
+              // Clear ALL registration state - user cannot login without verification
               localStorage.removeItem('register_phone');
               localStorage.removeItem('register_password');
               localStorage.removeItem('register_code_sent');
               localStorage.removeItem('register_verification_method');
-              // Don't clear form_data here - keep it so user can continue editing
+              localStorage.removeItem('register_form_data'); // Clear form data too to prevent reusing
               
               setCodeSent(false);
               setRegisteredPhone('');
               setRegisteredPassword('');
               setVerificationCode('');
               setVerificationMethod('phone');
+              
+              toast.info("Tasdiqlash jarayoni bekor qilindi. Ro'yxatdan o'tish ma'lumotlari tozalandi.", {
+                duration: 5000,
+              });
             }}
             className="text-slate-400 hover:text-white text-sm w-full"
           >
-            Orqaga
+            Orqaga (Jarayonni bekor qilish)
           </button>
         </div>
       </div>

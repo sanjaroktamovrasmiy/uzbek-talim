@@ -11,8 +11,8 @@ WORKDIR /app
 # Copy package files
 COPY apps/web/package.json apps/web/package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (need dev dependencies for build)
+RUN npm ci
 
 # Stage 2: Builder
 FROM node:20-alpine as builder

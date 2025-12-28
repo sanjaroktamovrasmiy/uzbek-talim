@@ -183,6 +183,11 @@ class AuthService:
         if not verify_password(password, user.password_hash):
             raise AuthenticationError("Invalid phone number or password")
 
+        if not user.is_verified:
+            raise AuthenticationError(
+                "Telefon raqami tasdiqlanmagan. Iltimos, ro'yxatdan o'tish jarayonida tasdiqlash kodini kiriting."
+            )
+
         if not user.is_active:
             raise AuthenticationError("Account is deactivated")
 

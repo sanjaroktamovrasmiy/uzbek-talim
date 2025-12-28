@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Plus, X, GripVertical, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { testsApi, coursesApi } from '@/services/api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
@@ -287,97 +287,8 @@ export function EditTestPage() {
     }
   };
 
-  // Question management functions (same as CreateTestPage)
-  const addQuestion = () => {
-    const newQuestion: Question = {
-      id: `temp-${Date.now()}-${Math.random()}`,
-      question_text: '',
-      question_type: 'single_choice',
-      points: 1,
-      order_index: questions.length,
-      options: [
-        { id: `opt-${Date.now()}-1`, option_text: '', is_correct: false, order_index: 0 },
-        { id: `opt-${Date.now()}-2`, option_text: '', is_correct: false, order_index: 1 },
-      ],
-    };
-    setQuestions([...questions, newQuestion]);
-  };
-
-  const removeQuestion = (questionId: string) => {
-    setQuestions(questions.filter(q => q.id !== questionId).map((q, idx) => ({
-      ...q,
-      order_index: idx,
-    })));
-  };
-
-  const updateQuestion = (questionId: string, field: keyof Question, value: any) => {
-    setQuestions(questions.map(q => 
-      q.id === questionId ? { ...q, [field]: value } : q
-    ));
-  };
-
-  const addOption = (questionId: string) => {
-    setQuestions(questions.map(q => {
-      if (q.id === questionId) {
-        const newOption: QuestionOption = {
-          id: `opt-${Date.now()}-${Math.random()}`,
-          option_text: '',
-          is_correct: false,
-          order_index: q.options.length,
-        };
-        return { ...q, options: [...q.options, newOption] };
-      }
-      return q;
-    }));
-  };
-
-  const removeOption = (questionId: string, optionId: string) => {
-    setQuestions(questions.map(q => {
-      if (q.id === questionId) {
-        const filtered = q.options.filter(o => o.id !== optionId);
-        return {
-          ...q,
-          options: filtered.map((o, idx) => ({ ...o, order_index: idx })),
-        };
-      }
-      return q;
-    }));
-  };
-
-  const updateOption = (questionId: string, optionId: string, field: keyof QuestionOption, value: any) => {
-    setQuestions(questions.map(q => {
-      if (q.id === questionId) {
-        return {
-          ...q,
-          options: q.options.map(o => 
-            o.id === optionId ? { ...o, [field]: value } : o
-          ),
-        };
-      }
-      return q;
-    }));
-  };
-
-  const toggleCorrectOption = (questionId: string, optionId: string) => {
-    setQuestions(questions.map(q => {
-      if (q.id === questionId) {
-        const isMultiple = q.question_type === 'multiple_choice';
-        return {
-          ...q,
-          options: q.options.map(o => {
-            if (o.id === optionId) {
-              return { ...o, is_correct: !o.is_correct };
-            }
-            if (!isMultiple && o.is_correct) {
-              return { ...o, is_correct: false };
-            }
-            return o;
-          }),
-        };
-      }
-      return q;
-    }));
-  };
+  // Question management functions will be implemented when question editing feature is added
+  // See CreateTestPage.tsx for reference implementation
 
   if (loadingTest) {
     return (

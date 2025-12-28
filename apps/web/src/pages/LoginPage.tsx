@@ -88,6 +88,16 @@ export function LoginPage() {
         toast.error("Parol o'rnatilmagan. Iltimos, parolni tiklash funksiyasidan foydalaning.", {
           duration: 5000,
         });
+      } else if (errorMessage.includes("tasdiqlanmagan") || errorMessage.includes("not verified") || errorMessage.includes("Telefon raqami")) {
+        toast.error(
+          "❌ Telefon raqami tasdiqlanmagan:\n\n" +
+          "Sizning telefon raqamingiz hali tasdiqlanmagan. " +
+          "Iltimos, ro'yxatdan o'tish jarayonida tasdiqlash kodini kiriting.\n\n" +
+          "Agar siz yangi hisob ochmoqchi bo'lsangiz, ro'yxatdan o'tish sahifasiga qayting.",
+          {
+            duration: 8000,
+          }
+        );
       } else if (errorMessage.includes("Invalid") || errorMessage.includes("password")) {
         toast.error("Noto'g'ri telefon raqam yoki parol. Iltimos, qaytadan urinib ko'ring.", {
           duration: 5000,

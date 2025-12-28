@@ -251,7 +251,7 @@ export function CreateTestPage() {
       console.log('Full request data:', JSON.stringify(requestData, null, 2));
       console.log('=====================================');
 
-      const response = await testsApi.createTest(requestData);
+      await testsApi.createTest(requestData);
       
       // Clear cache after successful creation
       localStorage.removeItem('create_test_form_data');
