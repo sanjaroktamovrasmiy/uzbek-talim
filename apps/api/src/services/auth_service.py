@@ -98,6 +98,18 @@ class AuthService:
         )
         await self.user_repo.create(user)
 
+        # Check if user already has telegram_id by phone (if user started bot before registration)
+        # Try to find existing telegram user with same phone
+        try:
+            existing_telegram_user = await self.user_repo.get_by_phone(request.phone)
+            if existing_telegram_user and existing_telegram_user.telegram_id:
+                # Update newly created user with telegram_id
+                await self.user_repo.update(user, telegram_id=existing_telegram_user.telegram_id)
+                user.telegram_id = existing_telegram_user.telegram_id
+        except Exception:
+            # If error occurs, continue without telegram_id
+            pass
+
         # Generate and send verification code
         code = generate_code(6)
         _set_verification_code(request.phone, code)
