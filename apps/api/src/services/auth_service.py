@@ -175,13 +175,13 @@ class AuthService:
         user = await self.user_repo.get_by_phone(phone)
 
         if not user:
-            raise AuthenticationError("Invalid phone number or password")
+            raise AuthenticationError("Noto'g'ri telefon raqam yoki parol. Iltimos, qaytadan urinib ko'ring.")
 
         if not user.password_hash:
-            raise AuthenticationError("Password not set. Please reset your password.")
+            raise AuthenticationError("Parol o'rnatilmagan. Iltimos, parolni tiklash funksiyasidan foydalaning.")
 
         if not verify_password(password, user.password_hash):
-            raise AuthenticationError("Invalid phone number or password")
+            raise AuthenticationError("Noto'g'ri telefon raqam yoki parol. Iltimos, qaytadan urinib ko'ring.")
 
         if not user.is_verified:
             raise AuthenticationError(
@@ -189,7 +189,7 @@ class AuthService:
             )
 
         if not user.is_active:
-            raise AuthenticationError("Account is deactivated")
+            raise AuthenticationError("Hisobingiz o'chirilgan. Iltimos, admin bilan bog'laning.")
 
         return self._create_tokens(user)
 
@@ -238,7 +238,7 @@ class AuthService:
         user = await self.user_repo.get_by_phone(phone)
 
         if not user:
-            raise ValidationError("User not found. Please register first.")
+            raise ValidationError("Foydalanuvchi topilmadi. Iltimos, avval ro'yxatdan o'ting.")
 
         if not user.telegram_id:
             raise ValidationError(
