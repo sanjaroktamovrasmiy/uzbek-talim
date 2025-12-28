@@ -210,11 +210,11 @@ class AuthService:
             payload = decode_refresh_token(refresh_token)
             user_id = payload.get("sub")
         except Exception:
-            raise AuthenticationError("Invalid refresh token")
+            raise AuthenticationError("Noto'g'ri token. Iltimos, qaytadan kirib ko'ring.")
 
         user = await self.user_repo.get_by_id(user_id)
         if not user or not user.is_active:
-            raise AuthenticationError("User not found or inactive")
+            raise AuthenticationError("Foydalanuvchi topilmadi yoki hisob o'chirilgan.")
 
         return self._create_tokens(user)
 
@@ -259,7 +259,7 @@ class AuthService:
         )
 
         if not sent:
-            raise ValidationError("Failed to send code via Telegram. Please try again.")
+            raise ValidationError("Telegram orqali kod yuborishda xatolik. Iltimos, qaytadan urinib ko'ring.")
 
         return {
             "success": True,
@@ -291,7 +291,7 @@ class AuthService:
         # Check code
         stored_code = _get_verification_code(phone)
         if not stored_code or stored_code != code:
-            raise ValidationError("Invalid verification code")
+            raise ValidationError("Noto'g'ri tasdiqlash kodi. Iltimos, qaytadan urinib ko'ring.")
 
         # Remove used code
         _clear_verification_code(phone)
@@ -299,7 +299,7 @@ class AuthService:
         # Update user as verified
         user = await self.user_repo.get_by_phone(phone)
         if not user:
-            raise ValidationError("User not found")
+            raise ValidationError("Foydalanuvchi topilmadi. Iltimos, avval ro'yxatdan o'ting.")
 
         await self.user_repo.update(user, is_verified=True)
 
@@ -349,13 +349,13 @@ class AuthService:
         """
         user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise AuthenticationError("User not found")
+            raise AuthenticationError("Foydalanuvchi topilmadi.")
 
         if not user.password_hash:
-            raise AuthenticationError("Password not set. Please set password first.")
+            raise AuthenticationError("Parol o'rnatilmagan. Iltimos, avval parol o'rnating.")
 
         if not verify_password(current_password, user.password_hash):
-            raise AuthenticationError("Current password is incorrect")
+            raise AuthenticationError("Joriy parol noto'g'ri. Iltimos, to'g'ri parolni kiriting.")
 
         # Update password
         await self.user_repo.update(user, password_hash=hash_password(new_password))
