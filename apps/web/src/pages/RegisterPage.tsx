@@ -145,14 +145,21 @@ export function RegisterPage() {
           e.response?.data?.error?.message || 
           e.message || 
           "";
-        if (errorMsg.includes("Telegram ID not found") || errorMsg.includes("not found") || errorMsg.includes("Telegram ID topilmadi")) {
+        // If Telegram ID not found, inform user but don't show error - use phone verification instead
+        if (errorMsg.includes("Telegram ID topilmadi") || errorMsg.includes("Telegram ID not found") || errorMsg.includes("not found")) {
+          // This is expected - user needs to start bot first, but they can still verify via phone
           toast.success(
-            "Ro'yxatdan o'tdingiz! Telegram orqali kod yuborish mumkin emas. " +
-            "Telegram orqali kod olish uchun avval Telegram botga /start buyrug'ini yuborib bot bilan bog'lanishingiz kerak. " +
-            "Hozir telefon raqamni tasdiqlash uchun kodni qo'lda kiriting.",
-            { duration: 8000 }
+            "Ro'yxatdan o'tdingiz! Telefon raqamni tasdiqlash uchun kodni kiriting. " +
+            "(Telegram orqali kod olish uchun avval Telegram botga /start buyrug'ini yuborishingiz kerak.)",
+            { duration: 7000 }
           );
+        } else if (errorMsg.includes("Foydalanuvchi topilmadi")) {
+          // This shouldn't happen after registration, but handle it gracefully
+          toast.success("Ro'yxatdan o'tdingiz! Telefon raqamni tasdiqlash uchun kodni kiriting.", {
+            duration: 5000,
+          });
         } else {
+          // Other errors - still allow phone verification
           toast.success("Ro'yxatdan o'tdingiz! Telefon raqamni tasdiqlash uchun kodni kiriting.", {
             duration: 5000,
           });
