@@ -55,7 +55,7 @@ class Course(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, SlugMixin):
     # Status
     status: Mapped[str] = mapped_column(
         String(50),
-        default=CourseStatus.DRAFT.value,
+        default=CourseStatus.PUBLISHED.value,
         nullable=False,
         index=True,
     )

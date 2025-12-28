@@ -4,7 +4,7 @@ API Routes.
 
 from fastapi import APIRouter
 
-from src.api.v1 import auth, users, courses, groups, lessons, payments, notifications
+from src.api.v1 import auth, users, courses, groups, lessons, payments, notifications, tests
 
 router = APIRouter()
 
@@ -16,4 +16,5 @@ router.include_router(groups.router, prefix="/groups", tags=["Groups"])
 router.include_router(lessons.router, prefix="/lessons", tags=["Lessons"])
 router.include_router(payments.router, prefix="/payments", tags=["Payments"])
 router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+router.include_router(tests.router, prefix="/tests", tags=["Tests"])
 

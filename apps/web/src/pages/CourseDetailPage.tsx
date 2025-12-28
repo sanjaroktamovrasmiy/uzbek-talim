@@ -1,32 +1,88 @@
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, Users, Calendar, CheckCircle, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Clock, Users, Calendar, CheckCircle, MessageSquare, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { coursesApi } from '@/services/api';
 import toast from 'react-hot-toast';
+
+interface Course {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  short_description?: string;
+  price: number;
+  discount_price?: number;
+  current_price: number;
+  duration_months: number;
+  lessons_per_week: number;
+  lesson_duration_minutes: number;
+  level?: string;
+  category?: string;
+  tags?: string;
+  status: string;
+}
 
 export function CourseDetailPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with API call
-  const course = {
-    id: '1',
-    slug: slug,
-    name: 'Ingliz tili',
-    description: `
-      Ingliz tilini noldan o'rganing yoki mavjud bilimingizni rivojlantiring.
-      
-      Kursimizda siz:
-      - Grammar asoslarini o'rganasiz
-      - Speaking ko'nikmalarini rivojlantirasiz
-      - Listening va Reading bo'yicha mashq qilasiz
-      - Writing ko'nikmalarini oshirasiz
-    `,
-    price: 500000,
-    duration_months: 3,
-    lessons_per_week: 3,
-    lesson_duration_minutes: 90,
-    level: 'Boshlang\'ich',
+  useEffect(() => {
+    if (slug) {
+      loadCourse(slug);
+    }
+  }, [slug]);
+
+  const loadCourse = async (courseSlug: string) => {
+    try {
+      setLoading(true);
+      console.log('Loading course with slug:', courseSlug);
+      const data = await coursesApi.getBySlug(courseSlug);
+      console.log('Course data received:', data);
+      setCourse(data);
+    } catch (error: any) {
+      console.error('Error loading course:', error);
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.detail || error.message || 'Kursni yuklashda xatolik';
+      toast.error(errorMessage);
+      // Don't navigate immediately, let user see the error
+      setTimeout(() => {
+        navigate('/courses');
+      }, 2000);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="py-12">
+        <div className="container-custom">
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-400" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="py-12">
+        <div className="container-custom">
+          <div className="text-center py-12">
+            <p className="text-slate-400 mb-4">Kurs topilmadi</p>
+            <Link to="/courses" className="btn-primary">
+              Barcha kurslarga qaytish
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const features = [
     "Tajribali o'qituvchilar",
@@ -95,8 +151,13 @@ export function CourseDetailPage() {
               <div className="text-center mb-6">
                 <span className="text-slate-400 text-sm">Narxi</span>
                 <div className="text-3xl font-bold text-primary-400">
-                  {new Intl.NumberFormat('uz-UZ').format(course.price)} so'm
+                  {new Intl.NumberFormat('uz-UZ').format(course.current_price || course.price)} so'm
                 </div>
+                {course.discount_price && course.discount_price < course.price && (
+                  <div className="text-sm text-slate-500 line-through mt-1">
+                    {new Intl.NumberFormat('uz-UZ').format(course.price)} so'm
+                  </div>
+                )}
                 <span className="text-slate-500 text-sm">oyiga</span>
               </div>
 

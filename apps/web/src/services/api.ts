@@ -116,6 +116,40 @@ export const coursesApi = {
     const response = await api.get(`/courses/${slug}`);
     return response.data;
   },
+
+  create: async (data: {
+    name: string;
+    description?: string;
+    short_description?: string;
+    duration_months?: number;
+    lessons_per_week?: number;
+    lesson_duration_minutes?: number;
+    price: number;
+    discount_price?: number;
+    level?: string;
+    category?: string;
+    tags?: string;
+  }) => {
+    const response = await api.post('/courses', data);
+    return response.data;
+  },
+
+  update: async (courseId: string, data: Partial<{
+    name: string;
+    description?: string;
+    short_description?: string;
+    duration_months?: number;
+    lessons_per_week?: number;
+    lesson_duration_minutes?: number;
+    price: number;
+    discount_price?: number;
+    level?: string;
+    category?: string;
+    tags?: string;
+  }>) => {
+    const response = await api.patch(`/courses/${courseId}`, data);
+    return response.data;
+  },
 };
 
 // Users API
@@ -130,6 +164,7 @@ export const usersApi = {
     last_name: string;
     email: string;
     avatar_url: string;
+    specialization: string;
   }>) => {
     const user = useAuthStore.getState().user;
     const response = await api.patch(`/users/${user?.id}`, data);
@@ -260,13 +295,82 @@ export const adminPaymentsApi = {
 
 // Tests API
 export const testsApi = {
-  getTests: async () => {
-    const response = await api.get('/tests');
+  getTests: async (params?: { page?: number; size?: number; course_id?: string; test_type?: string }) => {
+    const response = await api.get('/tests', { params });
     return response.data;
   },
 
-  getTest: async (testId: string) => {
-    const response = await api.get(`/tests/${testId}`);
+  getTest: async (testId: string, accessKey?: string) => {
+    const params = accessKey ? { access_key: accessKey } : undefined;
+    const response = await api.get(`/tests/${testId}`, { params });
+    return response.data;
+  },
+
+  createTest: async (data: {
+    course_id?: string;
+    test_type?: string;
+    title: string;
+    description?: string;
+    duration: number;
+    max_score: number;
+    passing_score: number;
+    is_active?: boolean;
+    available_from?: string;
+    available_until?: string;
+    access_key?: string;
+    scoring_model?: string;
+    test_config?: Record<string, any>;
+    questions?: Array<{
+      question_text: string;
+      question_type?: string;
+      order_index?: number;
+      points?: number;
+      options?: Array<{
+        option_text: string;
+        is_correct: boolean;
+        order_index?: number;
+      }>;
+    }>;
+  }) => {
+    const response = await api.post('/tests', data);
+    return response.data;
+  },
+
+  updateTest: async (testId: string, data: Partial<{
+    title: string;
+    description?: string;
+    duration: number;
+    max_score: number;
+    passing_score: number;
+    is_active?: boolean;
+    available_from?: string;
+    available_until?: string;
+    test_type?: string;
+    access_key?: string;
+    scoring_model?: string;
+    test_config?: Record<string, any>;
+  }>) => {
+    const response = await api.patch(`/tests/${testId}`, data);
+    return response.data;
+  },
+
+  deleteTest: async (testId: string) => {
+    const response = await api.delete(`/tests/${testId}`);
+    return response.data;
+  },
+
+  addQuestion: async (testId: string, data: {
+    question_text: string;
+    question_type?: string;
+    order_index?: number;
+    points?: number;
+    options?: Array<{
+      option_text: string;
+      is_correct: boolean;
+      order_index?: number;
+    }>;
+  }) => {
+    const response = await api.post(`/tests/${testId}/questions`, data);
     return response.data;
   },
 

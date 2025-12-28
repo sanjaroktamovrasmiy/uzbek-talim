@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Calendar,
@@ -7,11 +7,6 @@ import {
   BookOpen,
   User,
   Menu,
-  X,
-  LogOut,
-  Home,
-  ChevronLeft,
-  ChevronRight,
   FileText,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -36,18 +31,12 @@ export function DashboardLayout() {
   });
   
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
   // Sidebar holatini localStorage'da saqlash
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarOpen));
   }, [sidebarOpen]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -70,9 +59,9 @@ export function DashboardLayout() {
         className={`
           fixed lg:static inset-y-0 left-0 z-50
           bg-slate-900 border-r border-slate-800
-          transform transition-all duration-200 ease-in-out
-          ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:border-r-0'}
+          transition-all duration-300 ease-in-out
           overflow-hidden
+          ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:border-r-0'}
         `}
       >
         <div className="flex flex-col h-full w-64">
@@ -80,9 +69,9 @@ export function DashboardLayout() {
           <div className="p-6 border-b border-slate-800">
             <div className="flex items-center gap-3 mb-4">
               <BrandLogo
-                to="/"
+                to="/about"
                 imgClassName="h-10 w-10"
-                className="gap-2"
+                className="gap-2 hover:opacity-80 transition-opacity active:scale-95"
                 showFallbackText={false}
               />
             </div>
@@ -126,32 +115,65 @@ export function DashboardLayout() {
                 </Link>
               );
             })}
-          </nav>
 
-          {/* User info & Actions */}
-          <div className="p-4 border-t border-slate-800 space-y-2">
-            <Link
-              to="/"
-              className="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-              <Home className="w-5 h-5" />
-              <span className="font-medium">Bosh sahifa</span>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-red-400 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Chiqish</span>
-            </button>
-          </div>
+            {/* Teacher-specific menu items */}
+            {user?.role === 'teacher' && (
+              <>
+                <div className="pt-4 mt-4 border-t border-slate-800">
+                  <p className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    O'qituvchi
+                  </p>
+                </div>
+                <Link
+                  to="/teacher/courses"
+                  onClick={() => {
+                    if (window.innerWidth < 1024) {
+                      setSidebarOpen(false);
+                    }
+                  }}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-lg
+                    transition-colors duration-200
+                    ${
+                      location.pathname.startsWith('/teacher/courses')
+                        ? 'bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-primary-400 border border-primary-500/30'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }
+                  `}
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <span className="font-medium">Mening kurslarim</span>
+                </Link>
+                <Link
+                  to="/teacher/tests"
+                  onClick={() => {
+                    if (window.innerWidth < 1024) {
+                      setSidebarOpen(false);
+                    }
+                  }}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-lg
+                    transition-colors duration-200
+                    ${
+                      location.pathname.startsWith('/teacher/tests')
+                        ? 'bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-primary-400 border border-primary-500/30'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }
+                  `}
+                >
+                  <FileText className="w-5 h-5" />
+                  <span className="font-medium">Mening testlarim</span>
+                </Link>
+              </>
+            )}
+          </nav>
         </div>
       </aside>
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -159,24 +181,15 @@ export function DashboardLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="bg-slate-900 border-b border-slate-800 px-4 py-4 lg:px-6">
+        <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 lg:px-6">
           <div className="flex items-center justify-between">
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors"
+              className="p-2 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors duration-150"
               aria-label={sidebarOpen ? "Sidebar'ni yopish" : "Sidebar'ni ochish"}
+              title={sidebarOpen ? "Sidebar'ni yopish" : "Sidebar'ni ochish"}
             >
-              {sidebarOpen ? (
-                <>
-                  <X className="w-6 h-6 lg:hidden" />
-                  <ChevronLeft className="w-5 h-5 hidden lg:block" />
-                </>
-              ) : (
-                <>
-                  <Menu className="w-6 h-6 lg:hidden" />
-                  <ChevronRight className="w-5 h-5 hidden lg:block" />
-                </>
-              )}
+              <Menu className="w-5 h-5" />
             </button>
             <div className="flex-1" />
             {(user?.role === 'admin' || user?.role === 'super_admin') && (
@@ -200,4 +213,3 @@ export function DashboardLayout() {
     </div>
   );
 }
-

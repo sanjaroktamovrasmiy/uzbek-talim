@@ -13,6 +13,7 @@ from src.keyboards.auth import (
     get_phone_keyboard,
     get_cancel_keyboard,
     get_confirm_keyboard,
+    get_role_keyboard,
 )
 from src.keyboards.main import get_main_keyboard
 from src.utils.messages import MESSAGES
@@ -131,16 +132,53 @@ async def process_password(message: Message, state: FSMContext) -> None:
         return
 
     await state.update_data(password=password)
+    await state.set_state(RegistrationStates.role)
+    await message.answer(
+        "👤 <b>Men kimman?</b>\n\n"
+        "Iltimos, o'zingizning rolini tanlang:",
+        reply_markup=get_role_keyboard(),
+    )
+
+
+@router.message(RegistrationStates.role)
+async def process_role(message: Message, state: FSMContext) -> None:
+    """Process role selection."""
+    if not message.text:
+        await message.answer(
+            "❌ Rolni tanlang. Iltimos, quyidagilardan birini tanlang:",
+            reply_markup=get_role_keyboard(),
+        )
+        return
+
+    role_text = message.text.strip()
+    role = None
+
+    # Check for student role
+    if "O'quvchi" in role_text or "👨‍🎓" in role_text or "oquvchi" in role_text.lower():
+        role = "student"
+    # Check for teacher role
+    elif "Ustoz" in role_text or "👨‍🏫" in role_text or "ustoz" in role_text.lower() or "o'qituvchi" in role_text.lower():
+        role = "teacher"
+    else:
+        await message.answer(
+            "❌ Noto'g'ri tanlov. Iltimos, quyidagilardan birini tanlang:",
+            reply_markup=get_role_keyboard(),
+        )
+        return
+
+    await state.update_data(role=role)
     await state.set_state(RegistrationStates.confirmation)
 
     # Show confirmation
     data = await state.get_data()
+    role_label = "O'quvchi" if role == "student" else "Ustoz"
     await message.answer(
         MESSAGES["registration_confirm"].format(
             phone=data["phone"],
             first_name=data["first_name"],
             last_name=data["last_name"],
-        ) + "\n\n🔐 Parol: " + "*" * len(password),
+        ) + f"\n\n🔐 Parol: {'*' * len(data['password'])}\n"
+        f"👤 Rol: {role_label}",
         reply_markup=get_confirm_keyboard(),
     )
 
@@ -176,12 +214,16 @@ async def confirm_registration(
         from passlib.context import CryptContext
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         
+        # Get role from state data, default to student
+        role = data.get("role", "student")
+        
         user = await user_service.register_user(
             telegram_id=message.from_user.id,
             phone=data["phone"],
             first_name=data["first_name"],
             last_name=data["last_name"],
             telegram_username=message.from_user.username,
+            role=role,
         )
         
         # Update password if provided

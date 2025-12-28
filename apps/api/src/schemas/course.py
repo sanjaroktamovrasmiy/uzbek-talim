@@ -88,6 +88,10 @@ class CourseBriefResponse(BaseModel):
     short_description: Optional[str] = None
     image_url: Optional[str] = None
     current_price: Decimal
+    price: Decimal
+    discount_price: Optional[Decimal] = None
+    duration_months: int
+    lessons_per_week: int
     status: str
     is_featured: bool
     category: Optional[str] = None

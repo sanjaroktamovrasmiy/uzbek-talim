@@ -3,12 +3,13 @@ Test/Exam models.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Dict, Any
 
-from sqlalchemy import Boolean, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import Boolean, Integer, String, Text, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.base import Base, TimestampMixin, UUIDMixin, SoftDeleteMixin
+from shared.constants import TestType, ScoringModel
 
 if TYPE_CHECKING:
     from db.models.course import Course
@@ -18,9 +19,15 @@ if TYPE_CHECKING:
 class Test(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     """Test/Exam model."""
 
-    course_id: Mapped[str] = mapped_column(
-        ForeignKey("courses.id", ondelete="CASCADE"),
+    course_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("courses.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    test_type: Mapped[str] = mapped_column(
+        String(50),
         nullable=False,
+        default=TestType.COURSE_TEST.value,
         index=True,
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -31,9 +38,20 @@ class Test(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     available_from: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     available_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    access_key: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, unique=True, index=True)
+    scoring_model: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default=ScoringModel.SIMPLE.value,
+    )
+    test_config: Mapped[Dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )  # Flexible configuration for test settings
 
     # Relationships
-    course: Mapped["Course"] = relationship("Course", back_populates="tests")
+    course: Mapped[Optional["Course"]] = relationship("Course", back_populates="tests")
     questions: Mapped[list["TestQuestion"]] = relationship(
         "TestQuestion",
         back_populates="test",

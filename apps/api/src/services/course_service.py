@@ -2,6 +2,7 @@
 Course service.
 """
 
+import uuid
 from typing import Optional
 
 from shared import NotFoundError
@@ -40,17 +41,53 @@ class CourseService:
         Raises:
             NotFoundError: If course not found
         """
-        # Try by ID first
-        course = await self.course_repo.get_by_id(course_id)
-        if not course or course.deleted_at:
-            # Try by slug
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        course = None
+        
+        # First, try by slug (most common case for public URLs)
+        logger.info(f"Trying to get course by slug: {course_id}")
+        try:
             course = await self.course_repo.get_by_slug(course_id)
+            if course:
+                logger.info(f"Course found by slug: {course.name}")
+        except Exception as e:
+            logger.error(f"Error getting course by slug: {e}")
+            course = None
+        
+        # If not found by slug, check if it's a UUID and try by ID
+        if not course:
+            is_uuid = False
+            try:
+                uuid.UUID(course_id)
+                is_uuid = True
+                logger.info(f"course_id is a valid UUID, trying by ID: {course_id}")
+            except (ValueError, TypeError):
+                is_uuid = False
+                logger.info(f"course_id is not a valid UUID: {course_id}")
+            
+            if is_uuid:
+                try:
+                    course = await self.course_repo.get_by_id(course_id)
+                    if course:
+                        logger.info(f"Course found by ID: {course.name}")
+                except Exception as e:
+                    logger.error(f"Error getting course by ID: {e}")
+                    course = None
 
         if not course or course.deleted_at:
             raise NotFoundError("Course", course_id)
 
         response = CourseResponse.model_validate(course)
-        response.groups_count = len(course.groups) if course.groups else 0
+        # Safely get groups count
+        try:
+            if hasattr(course, 'groups') and course.groups:
+                response.groups_count = len(course.groups)
+            else:
+                response.groups_count = 0
+        except Exception:
+            response.groups_count = 0
         return response
 
     async def list_courses(
@@ -66,7 +103,7 @@ class CourseService:
         Args:
             pagination: Pagination parameters
             category: Filter by category
-            status: Filter by status
+            status: Filter by status (None = all courses, "published" = only published)
             search: Search query
 
         Returns:
@@ -80,19 +117,36 @@ class CourseService:
             )
             total = len(courses)
         elif category:
-            courses = await self.course_repo.get_by_category(
-                category,
+            if status:
+                courses = await self.course_repo.get_by_category_and_status(
+                    category,
+                    status,
+                    skip=pagination.offset,
+                    limit=pagination.size,
+                )
+                total = await self.course_repo.count_by_category_and_status(category, status)
+            else:
+                courses = await self.course_repo.get_by_category(
+                    category,
+                    skip=pagination.offset,
+                    limit=pagination.size,
+                )
+                total = len(courses)
+        elif status:
+            # Filter by status
+            courses = await self.course_repo.get_by_status(
+                status,
                 skip=pagination.offset,
                 limit=pagination.size,
             )
-            total = len(courses)
+            total = await self.course_repo.count_by_status(status)
         else:
-            # Default to published courses
-            courses = await self.course_repo.get_published(
+            # No status filter - get all courses (for teachers/admins)
+            courses = await self.course_repo.get_all(
                 skip=pagination.offset,
                 limit=pagination.size,
             )
-            total = await self.course_repo.count_published()
+            total = await self.course_repo.count_all()
 
         items = [CourseBriefResponse.model_validate(c) for c in courses]
 
@@ -136,7 +190,7 @@ class CourseService:
             level=request.level,
             category=request.category,
             tags=request.tags,
-            status=CourseStatus.DRAFT.value,
+            status=CourseStatus.PUBLISHED.value,  # Auto-publish for teachers
         )
 
         await self.course_repo.create(course)

@@ -71,6 +71,9 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     address: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
+    # Teacher specialization
+    specialization: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
     # Relationships
     enrollments: Mapped[List["Enrollment"]] = relationship(
         "Enrollment",

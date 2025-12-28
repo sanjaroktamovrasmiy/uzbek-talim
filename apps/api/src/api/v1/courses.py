@@ -14,7 +14,7 @@ from src.schemas.course import (
 )
 from src.schemas.common import PaginationParams
 from src.services.course_service import CourseService
-from src.core.deps import get_course_service, get_current_user, require_admin
+from src.core.deps import get_course_service, get_current_user, get_optional_user, require_admin, require_teacher
 from db.models import User
 
 
@@ -24,6 +24,7 @@ router = APIRouter()
 @router.get("", response_model=CourseListResponse)
 async def list_courses(
     course_service: Annotated[CourseService, Depends(get_course_service)],
+    current_user: Annotated[User | None, Depends(get_optional_user)] = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     category: Optional[str] = None,
@@ -31,9 +32,19 @@ async def list_courses(
     search: Optional[str] = None,
 ) -> CourseListResponse:
     """
-    List all published courses.
+    List courses.
+    - Public users see only published courses
+    - Teachers and admins see all courses (including draft) if status is not specified
     """
     pagination = PaginationParams(page=page, size=size)
+    
+    # If user is teacher/admin and status is not specified, show all courses
+    is_staff = current_user and (current_user.is_admin or current_user.role == "teacher")
+    if is_staff and status is None:
+        status = None  # Will show all courses
+    elif status is None:
+        status = "published"  # Default for public users
+    
     return await course_service.list_courses(
         pagination=pagination,
         category=category,
@@ -46,10 +57,10 @@ async def list_courses(
 async def create_course(
     request: CourseCreateRequest,
     course_service: Annotated[CourseService, Depends(get_course_service)],
-    _: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(require_teacher)],
 ) -> CourseResponse:
     """
-    Create a new course (admin only).
+    Create a new course (teacher and admin).
     """
     return await course_service.create_course(request)
 
@@ -70,11 +81,13 @@ async def update_course(
     course_id: str,
     request: CourseUpdateRequest,
     course_service: Annotated[CourseService, Depends(get_course_service)],
-    _: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(require_teacher)],
 ) -> CourseResponse:
     """
-    Update course (admin only).
+    Update course (teacher and admin).
+    Teachers can only update their own courses.
     """
+    # TODO: Check if teacher owns this course (need to add teacher_id to Course model)
     return await course_service.update_course(course_id, request)
 
 

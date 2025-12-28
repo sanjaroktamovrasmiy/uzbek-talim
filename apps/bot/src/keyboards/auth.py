@@ -32,6 +32,18 @@ def get_cancel_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
+def get_role_keyboard() -> ReplyKeyboardMarkup:
+    """Get role selection keyboard."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="👨‍🎓 O'quvchi")],
+            [KeyboardButton(text="👨‍🏫 Ustoz")],
+            [KeyboardButton(text="❌ Bekor qilish")],
+        ],
+        resize_keyboard=True,
+    )
+
+
 def get_confirm_keyboard() -> ReplyKeyboardMarkup:
     """Get confirmation keyboard."""
     return ReplyKeyboardMarkup(

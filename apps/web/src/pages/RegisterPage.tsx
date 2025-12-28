@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -18,28 +18,89 @@ interface RegisterForm {
 export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [registeredPhone, setRegisteredPhone] = useState('');
-  const [registeredPassword, setRegisteredPassword] = useState('');
+  // Load state from localStorage on mount to persist across refreshes
+  const [registeredPhone, setRegisteredPhone] = useState(() => {
+    return localStorage.getItem('register_phone') || '';
+  });
+  const [registeredPassword, setRegisteredPassword] = useState(() => {
+    return localStorage.getItem('register_password') || '';
+  });
   const [verificationCode, setVerificationCode] = useState('');
-  const [codeSent, setCodeSent] = useState(false);
+  const [codeSent, setCodeSent] = useState(() => {
+    return localStorage.getItem('register_code_sent') === 'true';
+  });
   const [sendingCode, setSendingCode] = useState(false);
-  const [verificationMethod, setVerificationMethod] = useState<'telegram' | 'phone'>('phone');
+  const [verificationMethod, setVerificationMethod] = useState<'telegram' | 'phone'>(() => {
+    return (localStorage.getItem('register_verification_method') as 'telegram' | 'phone') || 'phone';
+  });
   const navigate = useNavigate();
   const { login } = useAuthStore();
+
+  // Load form data from localStorage on mount
+  const loadFormData = (): Partial<RegisterForm> => {
+    try {
+      const saved = localStorage.getItem('register_form_data');
+      if (saved) {
+        const data = JSON.parse(saved);
+        // Don't load password for security
+        return {
+          phone: data.phone || '',
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          role: data.role || 'student',
+        };
+      }
+    } catch (e) {
+      console.error('Error loading form data:', e);
+    }
+    return {
+      role: 'student',
+    };
+  };
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<RegisterForm>({
-    defaultValues: {
-      role: 'student',
-    },
+    defaultValues: loadFormData(),
+    mode: 'onChange',
   });
 
   const password = watch('password');
   const selectedRole = watch('role');
+  const formData = watch();
+
+  // Save form data to localStorage whenever it changes (debounced)
+  useEffect(() => {
+    // Don't save password for security reasons
+    const dataToSave = {
+      phone: formData.phone || '',
+      first_name: formData.first_name || '',
+      last_name: formData.last_name || '',
+      role: formData.role || 'student',
+    };
+
+    // Only save if at least one field has value
+    if (dataToSave.phone || dataToSave.first_name || dataToSave.last_name) {
+      const timeoutId = setTimeout(() => {
+        localStorage.setItem('register_form_data', JSON.stringify(dataToSave));
+      }, 500); // Debounce: save after 500ms of no changes
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData.phone, formData.first_name, formData.last_name, formData.role]);
+
+  // Load form data on mount
+  useEffect(() => {
+    const saved = loadFormData();
+    if (saved.phone) setValue('phone', saved.phone);
+    if (saved.first_name) setValue('first_name', saved.first_name);
+    if (saved.last_name) setValue('last_name', saved.last_name);
+    if (saved.role) setValue('role', saved.role);
+  }, [setValue]);
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
@@ -51,25 +112,44 @@ export function RegisterPage() {
         password: data.password,
         role: data.role,
       });
+      
+      // Save to localStorage to persist across refreshes
+      localStorage.setItem('register_phone', data.phone);
+      localStorage.setItem('register_password', data.password);
+      localStorage.setItem('register_code_sent', 'true');
+      
+      // Clear form data from localStorage after successful registration
+      localStorage.removeItem('register_form_data');
+      
+      // Update state - this will trigger re-render to show verification page
       setRegisteredPhone(data.phone);
       setRegisteredPassword(data.password);
       setVerificationCode('');
       setCodeSent(true);
+      setIsLoading(false); // Set loading to false after state is updated
 
       // Try to send code via Telegram if user has telegram_id
       try {
         await authApi.sendTelegramCode(data.phone);
+        localStorage.setItem('register_verification_method', 'telegram');
         setVerificationMethod('telegram');
         toast.success("Ro'yxatdan o'tdingiz! Tasdiqlash kodi Telegram orqali yuborildi. Iltimos, kodni kiriting.");
       } catch (e: any) {
         // If Telegram code fails, fall back to phone verification
+        localStorage.setItem('register_verification_method', 'phone');
         setVerificationMethod('phone');
-        const errorMsg = e.response?.data?.detail || e.message || "";
-        if (errorMsg.includes("Telegram ID not found") || errorMsg.includes("not found")) {
+        // Support both error formats: {detail: ...} and {error: {message: ...}}
+        const errorMsg = 
+          e.response?.data?.detail || 
+          e.response?.data?.error?.message || 
+          e.message || 
+          "";
+        if (errorMsg.includes("Telegram ID not found") || errorMsg.includes("not found") || errorMsg.includes("Telegram ID topilmadi")) {
           toast.success(
             "Ro'yxatdan o'tdingiz! Telegram orqali kod yuborish mumkin emas. " +
-            "Iltimos, telefon raqamni tasdiqlash uchun kodni qo'lda kiriting yoki Telegram botga ulaning.",
-            { duration: 6000 }
+            "Telegram orqali kod olish uchun avval Telegram botga /start buyrug'ini yuborib bot bilan bog'lanishingiz kerak. " +
+            "Hozir telefon raqamni tasdiqlash uchun kodni qo'lda kiriting.",
+            { duration: 8000 }
           );
         } else {
           toast.success("Ro'yxatdan o'tdingiz! Telefon raqamni tasdiqlash uchun kodni kiriting.", {
@@ -78,29 +158,194 @@ export function RegisterPage() {
         }
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || "Xatolik yuz berdi";
+      // Support both error formats: {detail: ...} and {error: {message: ...}}
+      const errorMessage = 
+        error.response?.data?.detail || 
+        error.response?.data?.error?.message || 
+        error.message || 
+        "Xatolik yuz berdi";
       
-      // Check if phone already exists - redirect to login
-      if (errorMessage.includes("ro'yxatdan o'tgan") || errorMessage.includes("mavjud")) {
-        toast.error(errorMessage, {
-          duration: 6000,
-        });
+      // Check for specific validation errors
+      const errorData = error.response?.data;
+      let specificError = '';
+      
+      // Check for field-specific errors from Pydantic validation
+      if (errorData?.error?.details) {
+        const details = errorData.error.details;
+        if (details.errors && Array.isArray(details.errors)) {
+          const fieldErrors = details.errors.map((err: any) => {
+            const field = err.loc?.[1] || err.field || 'Maydon';
+            const msg = err.msg || err.message || 'Noto\'g\'ri';
+            return `${field}: ${msg}`;
+          }).join(', ');
+          specificError = fieldErrors;
+        }
+      }
+      
+      // Check for phone already exists
+      if (errorMessage.includes("ro'yxatdan o'tgan") || errorMessage.includes("mavjud") || errorMessage.includes("already registered")) {
+        toast.error(
+          "❌ Telefon raqam muammosi:\n\n" +
+          "Bu telefon raqam orqali allaqachon ro'yxatdan o'tgan foydalanuvchi mavjud.\n\n" +
+          "Yechim:\n" +
+          "• Agar bu sizning raqamingiz bo'lsa → Kirish sahifasiga o'ting\n" +
+          "• Agar boshqa hisob ochmoqchisiz → Avval eski hisobni o'chiring (Profil → Hisobni o'chirish)",
+          {
+            duration: 10000,
+          }
+        );
         setTimeout(() => {
           navigate('/login', { 
             state: { 
               phone: data.phone,
-              message: "Bu raqam orqali allaqachon ro'yxatdan o'tgansiz. Iltimos, kirish sahifasiga o'ting." 
+              message: "Bu raqam orqali allaqachon ro'yxatdan o'tgansiz. Iltimos, kirish sahifasiga o'ting yoki eski hisobni o'chiring." 
             } 
           });
         }, 2000);
-      } else {
-        toast.error(errorMessage, {
-          duration: 5000,
-        });
       }
-    } finally {
+      // Check for phone format error
+      else if (errorMessage.includes("telefon raqam formati") || errorMessage.includes("phone number format") || errorMessage.includes("Noto'g'ri format")) {
+        toast.error(
+          "❌ Telefon raqam formati noto'g'ri:\n\n" +
+          "To'g'ri format: +998901234567\n\n" +
+          "Iltimos, telefon raqamingizni quyidagi formatda kiriting:\n" +
+          "• +998 bilan boshlanishi kerak\n" +
+          "• Keyin 9 ta raqam\n" +
+          "• Masalan: +998901234567",
+          {
+            duration: 8000,
+          }
+        );
+      }
+      // Check for password errors
+      else if (errorMessage.includes("Parol") || errorMessage.includes("password") || errorMessage.includes("parol")) {
+        if (errorMessage.includes("kamida 6")) {
+          toast.error(
+            "❌ Parol muammosi:\n\n" +
+            "Parol kamida 6 ta belgidan iborat bo'lishi kerak.\n\n" +
+            "Iltimos, uzunroq parol kiriting.",
+            {
+              duration: 6000,
+            }
+          );
+        } else if (errorMessage.includes("oddiy") || errorMessage.includes("xavfsiz")) {
+          toast.error(
+            "❌ Parol xavfsizligi muammosi:\n\n" +
+            "Bu parol juda oddiy va xavfsiz emas.\n\n" +
+            "Yaxshi parol:\n" +
+            "• Harflar va raqamlar aralashmasi\n" +
+            "• Kamida 6 ta belgi\n" +
+            "• Oddiy so'zlar emas (masalan: '123456', 'password')",
+            {
+              duration: 8000,
+            }
+          );
+        } else if (errorMessage.includes("faqat raqam") || errorMessage.includes("all numbers")) {
+          toast.error(
+            "❌ Parol muammosi:\n\n" +
+            "Parol faqat raqamlardan iborat bo'lmasligi kerak.\n\n" +
+            "Iltimos, harflar va raqamlar aralashmasini ishlating.",
+            {
+              duration: 6000,
+            }
+          );
+        } else if (errorMessage.includes("faqat harf") || errorMessage.includes("all letters")) {
+          toast.error(
+            "❌ Parol muammosi:\n\n" +
+            "Parol faqat harflardan iborat bo'lmasligi kerak.\n\n" +
+            "Iltimos, raqamlar ham qo'shing.",
+            {
+              duration: 6000,
+            }
+          );
+        } else {
+          toast.error(
+            `❌ Parol muammosi:\n\n${errorMessage}`,
+            {
+              duration: 6000,
+            }
+          );
+        }
+      }
+      // Check for name errors
+      else if (errorMessage.includes("Ism") || errorMessage.includes("first_name") || errorMessage.includes("Familiya") || errorMessage.includes("last_name")) {
+        if (errorMessage.includes("kamida 2")) {
+          toast.error(
+            "❌ Ism yoki Familiya muammosi:\n\n" +
+            "Ism va Familiya kamida 2 ta harfdan iborat bo'lishi kerak.\n\n" +
+            "Iltimos, to'liq ism va familiyangizni kiriting.",
+            {
+              duration: 6000,
+            }
+          );
+        } else {
+          toast.error(
+            `❌ Ism yoki Familiya muammosi:\n\n${errorMessage}`,
+            {
+              duration: 6000,
+            }
+          );
+        }
+      }
+      // Check for role errors
+      else if (errorMessage.includes("Rol") || errorMessage.includes("role")) {
+        toast.error(
+          "❌ Rol tanlash muammosi:\n\n" +
+          "Iltimos, o'zingizning rolini tanlang:\n" +
+          "• O'quvchi - kurslarga yozilish uchun\n" +
+          "• Ustoz - kurslar yaratish uchun",
+          {
+            duration: 6000,
+          }
+        );
+      }
+      // Check for network/server errors
+      else if (error.response?.status === 0 || error.message?.includes("Network") || error.message?.includes("network")) {
+        toast.error(
+          "❌ Internet aloqasi muammosi:\n\n" +
+          "Internet aloqasi yo'q yoki serverga ulanib bo'lmadi.\n\n" +
+          "Iltimos:\n" +
+          "• Internet aloqangizni tekshiring\n" +
+          "• Bir necha soniyadan keyin qayta urinib ko'ring",
+          {
+            duration: 8000,
+          }
+        );
+      }
+      // Check for server errors (500, 502, 503, etc.)
+      else if (error.response?.status >= 500) {
+        toast.error(
+          "❌ Server muammosi:\n\n" +
+          "Serverda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.\n\n" +
+          "Agar muammo davom etsa, admin bilan bog'laning.",
+          {
+            duration: 8000,
+          }
+        );
+      }
+      // Generic error with specific message if available
+      else if (specificError) {
+        toast.error(
+          `❌ Ma'lumotlar noto'g'ri:\n\n${specificError}\n\nIltimos, ma'lumotlarni to'g'rilab kiriting.`,
+          {
+            duration: 8000,
+          }
+        );
+      }
+      // Default error message
+      else {
+        toast.error(
+          `❌ Xatolik yuz berdi:\n\n${errorMessage}\n\nIltimos, ma'lumotlarni tekshirib qayta urinib ko'ring.`,
+          {
+            duration: 8000,
+          }
+        );
+      }
+      // Only set loading to false if there was an error
       setIsLoading(false);
     }
+    // Note: If registration succeeds, setIsLoading(false) is called after setCodeSent(true)
+    // This ensures the verification page is shown immediately
   };
 
   const handleVerifyCode = async () => {
@@ -122,6 +367,14 @@ export function RegisterPage() {
         }
         const user = await authApi.getMe(response.access_token);
         login(user, response.access_token);
+        
+        // Clear registration state from localStorage after successful verification
+        localStorage.removeItem('register_phone');
+        localStorage.removeItem('register_password');
+        localStorage.removeItem('register_code_sent');
+        localStorage.removeItem('register_verification_method');
+        localStorage.removeItem('register_form_data'); // Clear form cache
+        
         toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz va kirdingiz!");
         navigate('/dashboard');
         return;
@@ -134,10 +387,23 @@ export function RegisterPage() {
       const tokenResponse = await authApi.login(registeredPhone, registeredPassword);
       const user = await authApi.getMe(tokenResponse.access_token);
       login(user, tokenResponse.access_token, tokenResponse.refresh_token);
+      
+      // Clear registration state from localStorage after successful verification
+      localStorage.removeItem('register_phone');
+      localStorage.removeItem('register_password');
+      localStorage.removeItem('register_code_sent');
+      localStorage.removeItem('register_verification_method');
+      localStorage.removeItem('register_form_data'); // Clear form cache
+      
       toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz va kirdingiz!");
       navigate('/dashboard');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || "Kod noto'g'ri";
+      // Support both error formats: {detail: ...} and {error: {message: ...}}
+      const errorMessage = 
+        error.response?.data?.detail || 
+        error.response?.data?.error?.message || 
+        error.message || 
+        "Kod noto'g'ri";
       
       if (errorMessage.includes("Noto'g'ri") || errorMessage.includes("Invalid")) {
         toast.error("Noto'g'ri tasdiqlash kodi. Iltimos, qaytadan urinib ko'ring yoki kodni qayta so'rang.", {
@@ -164,7 +430,12 @@ export function RegisterPage() {
       await authApi.sendTelegramCode(registeredPhone);
       toast.success('Kod qayta yuborildi!');
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Kod yuborishda xatolik");
+      // Support both error formats: {detail: ...} and {error: {message: ...}}
+      const errorMsg = 
+        error.response?.data?.detail || 
+        error.response?.data?.error?.message || 
+        "Kod yuborishda xatolik";
+      toast.error(errorMsg);
     } finally {
       setSendingCode(false);
     }
@@ -227,6 +498,13 @@ export function RegisterPage() {
           <button
             type="button"
             onClick={() => {
+              // Clear localStorage
+              localStorage.removeItem('register_phone');
+              localStorage.removeItem('register_password');
+              localStorage.removeItem('register_code_sent');
+              localStorage.removeItem('register_verification_method');
+              // Don't clear form_data here - keep it so user can continue editing
+              
               setCodeSent(false);
               setRegisteredPhone('');
               setRegisteredPassword('');
@@ -260,12 +538,23 @@ export function RegisterPage() {
               placeholder="Ism"
               className="input"
               {...register('first_name', {
-                required: 'Ismingizni kiriting',
-                minLength: { value: 2, message: 'Kamida 2 ta harf' },
+                required: 'Ism maydoni to\'ldirilishi shart',
+                minLength: { 
+                  value: 2, 
+                  message: 'Ism kamida 2 ta harfdan iborat bo\'lishi kerak' 
+                },
+                maxLength: {
+                  value: 100,
+                  message: 'Ism 100 ta harfdan oshmasligi kerak'
+                },
+                pattern: {
+                  value: /^[a-zA-Zа-яА-ЯёЁ\s'-]+$/,
+                  message: 'Ism faqat harflardan iborat bo\'lishi kerak'
+                }
               })}
             />
             {errors.first_name && (
-              <p className="text-red-400 text-sm mt-1">{errors.first_name.message}</p>
+              <p className="text-red-400 text-sm mt-1">❌ {errors.first_name.message}</p>
             )}
           </div>
 
@@ -278,12 +567,23 @@ export function RegisterPage() {
               placeholder="Familiya"
               className="input"
               {...register('last_name', {
-                required: 'Familiyangizni kiriting',
-                minLength: { value: 2, message: 'Kamida 2 ta harf' },
+                required: 'Familiya maydoni to\'ldirilishi shart',
+                minLength: { 
+                  value: 2, 
+                  message: 'Familiya kamida 2 ta harfdan iborat bo\'lishi kerak' 
+                },
+                maxLength: {
+                  value: 100,
+                  message: 'Familiya 100 ta harfdan oshmasligi kerak'
+                },
+                pattern: {
+                  value: /^[a-zA-Zа-яА-ЯёЁ\s'-]+$/,
+                  message: 'Familiya faqat harflardan iborat bo\'lishi kerak'
+                }
               })}
             />
             {errors.last_name && (
-              <p className="text-red-400 text-sm mt-1">{errors.last_name.message}</p>
+              <p className="text-red-400 text-sm mt-1">❌ {errors.last_name.message}</p>
             )}
           </div>
         </div>
@@ -297,15 +597,19 @@ export function RegisterPage() {
             placeholder="+998901234567"
             className="input"
             {...register('phone', {
-              required: 'Telefon raqam kiriting',
+              required: 'Telefon raqam maydoni to\'ldirilishi shart',
               pattern: {
                 value: /^\+998[0-9]{9}$/,
-                message: 'Noto\'g\'ri format (+998XXXXXXXXX)',
+                message: 'Noto\'g\'ri format. To\'g\'ri format: +998901234567 (+998 + 9 ta raqam)',
               },
             })}
           />
           {errors.phone && (
-            <p className="text-red-400 text-sm mt-1">{errors.phone.message}</p>
+            <p className="text-red-400 text-sm mt-1">
+              ❌ {errors.phone.message}
+              <br />
+              <span className="text-xs text-slate-400">Masalan: +998901234567</span>
+            </p>
           )}
         </div>
 
@@ -319,11 +623,27 @@ export function RegisterPage() {
               placeholder="Kamida 6 ta belgi"
               className="input pr-10"
               {...register('password', {
-                required: 'Parol kiriting',
+                required: 'Parol maydoni to\'ldirilishi shart',
                 minLength: {
                   value: 6,
-                  message: 'Kamida 6 ta belgi',
+                  message: 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak',
                 },
+                maxLength: {
+                  value: 100,
+                  message: 'Parol 100 ta belgidan oshmasligi kerak'
+                },
+                validate: (value) => {
+                  if (value === '123456' || value === 'password' || value === 'qwerty') {
+                    return 'Bu parol juda oddiy. Iltimos, kuchliroq parol tanlang';
+                  }
+                  if (/^\d+$/.test(value)) {
+                    return 'Parol faqat raqamlardan iborat bo\'lmasligi kerak. Harflar ham qo\'shing';
+                  }
+                  if (/^[a-zA-Z]+$/.test(value)) {
+                    return 'Parol faqat harflardan iborat bo\'lmasligi kerak. Raqamlar ham qo\'shing';
+                  }
+                  return true;
+                }
               })}
             />
             <button
@@ -335,7 +655,7 @@ export function RegisterPage() {
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-400 text-sm mt-1">{errors.password.message}</p>
+            <p className="text-red-400 text-sm mt-1">❌ {errors.password.message}</p>
           )}
         </div>
 
@@ -348,20 +668,23 @@ export function RegisterPage() {
             placeholder="Parolni qayta kiriting"
             className="input"
             {...register('confirmPassword', {
-              required: 'Parolni tasdiqlang',
+              required: 'Parolni tasdiqlash maydoni to\'ldirilishi shart',
               validate: (value) =>
-                value === password || 'Parollar mos kelmaydi',
+                value === password || 'Parollar mos kelmaydi. Iltimos, bir xil parol kiriting',
             })}
           />
           {errors.confirmPassword && (
-            <p className="text-red-400 text-sm mt-1">{errors.confirmPassword.message}</p>
+            <p className="text-red-400 text-sm mt-1">❌ {errors.confirmPassword.message}</p>
           )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">
-            Men kimman?
+            Men kimman? <span className="text-red-400">*</span>
           </label>
+          {errors.role && (
+            <p className="text-red-400 text-sm mb-2">{errors.role.message}</p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <label
               className={`
@@ -375,7 +698,9 @@ export function RegisterPage() {
               <input
                 type="radio"
                 value="student"
-                {...register('role')}
+                {...register('role', {
+                  required: 'Rolni tanlang',
+                })}
                 className="sr-only"
               />
               <div className="text-center">
@@ -398,7 +723,9 @@ export function RegisterPage() {
               <input
                 type="radio"
                 value="teacher"
-                {...register('role')}
+                {...register('role', {
+                  required: 'Rolni tanlang',
+                })}
                 className="sr-only"
               />
               <div className="text-center">

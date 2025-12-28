@@ -32,9 +32,14 @@ def register_exception_handlers(app: FastAPI) -> None:
             f"Application error: {exc.error_code} - {exc.message}",
             extra={"path": request.url.path, "details": exc.details},
         )
+        # Support both formats: FastAPI standard {detail: ...} and custom {error: {message: ...}}
+        error_dict = exc.to_dict()
         return JSONResponse(
             status_code=exc.status_code,
-            content=exc.to_dict(),
+            content={
+                "detail": exc.message,  # FastAPI standard format
+                **error_dict,  # Custom format for backward compatibility
+            },
         )
 
     @app.exception_handler(NotFoundError)
@@ -54,9 +59,14 @@ def register_exception_handlers(app: FastAPI) -> None:
         exc: ValidationError,
     ) -> JSONResponse:
         """Handle validation errors."""
+        # Support both formats: FastAPI standard {detail: ...} and custom {error: {message: ...}}
+        error_dict = exc.to_dict()
         return JSONResponse(
             status_code=exc.status_code,
-            content=exc.to_dict(),
+            content={
+                "detail": exc.message,  # FastAPI standard format
+                **error_dict,  # Custom format for backward compatibility
+            },
         )
 
     @app.exception_handler(AuthenticationError)

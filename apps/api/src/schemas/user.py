@@ -24,6 +24,7 @@ class UserBase(BaseModel):
     region: Optional[str] = None
     city: Optional[str] = None
     address: Optional[str] = None
+    specialization: Optional[str] = None
 
 
 class UserCreateRequest(UserBase):
@@ -55,6 +56,7 @@ class UserUpdateRequest(BaseModel):
     city: Optional[str] = None
     address: Optional[str] = None
     avatar_url: Optional[str] = None
+    specialization: Optional[str] = None
 
 
 class UserResponse(BaseModel):
@@ -78,6 +80,7 @@ class UserResponse(BaseModel):
     region: Optional[str] = None
     city: Optional[str] = None
     address: Optional[str] = None
+    specialization: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

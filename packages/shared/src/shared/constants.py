@@ -105,6 +105,29 @@ class MessagePriority(IntEnum):
     URGENT = 4
 
 
+class TestType(str, Enum):
+    """Test types."""
+
+    COURSE_TEST = "course_test"  # Kursga bog'liq test
+    PUBLIC_TEST = "public_test"  # Ommaviy test (kursdan mustaqil)
+    MOCK_TEST = "mock_test"  # Mock test
+    SAT_MOCK = "sat_mock"  # SAT uchun mock test
+    ENTRANCE_TEST = "entrance_test"  # Kirish testi
+    PLACEMENT_TEST = "placement_test"  # Joylashtirish testi
+    DIAGNOSTIC_TEST = "diagnostic_test"  # Diagnostika testi
+    PRACTICE_TEST = "practice_test"  # Amaliy test
+
+
+class ScoringModel(str, Enum):
+    """Test scoring models."""
+
+    SIMPLE = "simple"  # Oddiy (to'g'ri javoblar soni)
+    WEIGHTED = "weighted"  # Vaznli (har bir savol uchun ball)
+    RASCH = "rasch"  # Rasch model (IRT)
+    THREE_PL = "three_pl"  # 3PL IRT model
+    TWO_PL = "two_pl"  # 2PL IRT model
+
+
 # ===========================================
 # Application Constants
 # ===========================================

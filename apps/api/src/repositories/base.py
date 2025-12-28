@@ -24,6 +24,14 @@ class BaseRepository(Generic[ModelType]):
 
     async def get_by_id(self, id: str) -> Optional[ModelType]:
         """Get entity by ID."""
+        import uuid
+        # Validate UUID format before querying
+        try:
+            uuid.UUID(id)
+        except (ValueError, TypeError):
+            # Not a valid UUID, return None instead of causing database error
+            return None
+        
         result = await self.session.execute(
             select(self.model).where(self.model.id == id)
         )

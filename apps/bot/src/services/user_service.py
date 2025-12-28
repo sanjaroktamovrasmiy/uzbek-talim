@@ -74,6 +74,7 @@ class UserService:
         first_name: str,
         last_name: str,
         telegram_username: str | None = None,
+        role: str | None = None,
     ) -> User:
         """
         Register user with phone number.
@@ -84,6 +85,7 @@ class UserService:
             first_name: First name
             last_name: Last name
             telegram_username: Telegram username
+            role: User role (student or teacher), defaults to STUDENT
 
         Returns:
             Created/updated user
@@ -92,6 +94,12 @@ class UserService:
         existing_by_phone = await self.repo.get_by_phone(phone)
         if existing_by_phone and existing_by_phone.telegram_id != telegram_id:
             raise ValueError("Bu telefon raqam allaqachon ro'yxatdan o'tgan")
+
+        # Default role to STUDENT if not provided
+        if role is None:
+            role = UserRole.STUDENT.value
+        elif role not in [UserRole.STUDENT.value, UserRole.TEACHER.value]:
+            role = UserRole.STUDENT.value
 
         # Get or create user by Telegram ID (including deleted)
         user = await self.repo.get_by_telegram_id(telegram_id)
@@ -108,7 +116,7 @@ class UserService:
                     first_name=first_name,
                     last_name=last_name,
                     telegram_username=telegram_username,
-                    role=UserRole.STUDENT.value,
+                    role=role,
                     is_verified=True,
                 )
             else:
@@ -119,7 +127,7 @@ class UserService:
                     last_name=last_name,
                     telegram_id=telegram_id,
                     telegram_username=telegram_username,
-                    role=UserRole.STUDENT.value,
+                    role=role,
                     is_verified=True,
                 )
                 await self.repo.create(user)
@@ -131,7 +139,7 @@ class UserService:
                 first_name=first_name,
                 last_name=last_name,
                 telegram_username=telegram_username,
-                role=UserRole.STUDENT.value,
+                role=role,
                 is_verified=True,
             )
 

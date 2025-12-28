@@ -15,7 +15,8 @@ import {
   Loader2,
   Camera,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -24,6 +25,7 @@ interface ProfileForm {
   first_name: string;
   last_name: string;
   email: string;
+  specialization?: string;
 }
 
 interface ChangePasswordForm {
@@ -41,6 +43,7 @@ export function ProfilePage() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -53,6 +56,7 @@ export function ProfilePage() {
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
       email: user?.email || '',
+      specialization: (user as any)?.specialization || '',
     },
   });
 
@@ -155,6 +159,7 @@ export function ProfilePage() {
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
       email: user?.email || '',
+      specialization: (user as any)?.specialization || '',
     });
     setIsEditing(false);
   };
@@ -306,6 +311,36 @@ export function ProfilePage() {
                   <p className="py-2.5 text-white">{user?.email || 'Kiritilmagan'}</p>
                 )}
               </div>
+
+              {/* Specialization (Teacher only) */}
+              {user?.role === 'teacher' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Mutaxassislik yo'nalishi
+                  </label>
+                  {isEditing ? (
+                    <select
+                      className="input"
+                      {...register('specialization')}
+                    >
+                      <option value="">Tanlang</option>
+                      <option value="Ingliz tili">Ingliz tili</option>
+                      <option value="Rus tili">Rus tili</option>
+                      <option value="Matematika">Matematika</option>
+                      <option value="Fizika">Fizika</option>
+                      <option value="Kimyo">Kimyo</option>
+                      <option value="Biologiya">Biologiya</option>
+                      <option value="Tarix">Tarix</option>
+                      <option value="Geografiya">Geografiya</option>
+                      <option value="Informatika">Informatika</option>
+                      <option value="Ona tili va adabiyot">Ona tili va adabiyot</option>
+                      <option value="Boshqa">Boshqa</option>
+                    </select>
+                  ) : (
+                    <p className="py-2.5 text-white">{(user as any)?.specialization || 'Kiritilmagan'}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Edit Actions */}
@@ -456,58 +491,112 @@ export function ProfilePage() {
           </div>
         </div>
 
+        {/* Logout */}
+        <div className="card border-orange-500/20 bg-orange-500/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                <LogOut className="w-5 h-5 text-orange-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm text-orange-400">Tizimdan chiqish</h3>
+                <p className="text-xs text-slate-400">
+                  Joriy seansni yakunlash
+                </p>
+              </div>
+            </div>
+            {!showLogoutConfirm ? (
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="btn-secondary border-orange-500/30 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/50 text-sm px-3 py-1.5"
+              >
+                <LogOut className="w-4 h-4" />
+                Chiqish
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-orange-400 font-medium mr-2">Tasdiqlaysizmi?</span>
+                <button
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
+                  className="btn-secondary border-orange-500/50 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 hover:border-orange-500 text-sm px-3 py-1.5"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Ha
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="btn-secondary text-sm px-3 py-1.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Yo'q
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Danger Zone - Delete Account */}
         <div className="card border-red-500/20 bg-red-500/5">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-6 h-6 text-red-400" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm text-red-400">Xavfli zona</h3>
+                <p className="text-xs text-slate-400">
+                  Hisobni o'chirish - qaytarib bo'lmaydi
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold mb-1 text-red-400">Xavfli zona</h3>
-              <p className="text-sm text-slate-400 mb-4">
-                Hisobingizni o'chirish. Bu amalni qaytarib bo'lmaydi va barcha ma'lumotlaringiz yo'qoladi.
-              </p>
-              {!showDeleteConfirm ? (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="btn-secondary border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Hisobni o'chirish
-                </button>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-red-400 font-medium">
-                    Hisobingizni o'chirishni tasdiqlaysizmi?
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="btn-secondary border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 transition-all duration-200 text-sm px-3 py-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                O'chirish
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="text-right mr-2">
+                  <p className="text-xs text-red-400 font-medium mb-1">
+                    ⚠️ Tasdiqlaysizmi?
                   </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleDeleteAccount}
-                      disabled={isDeletingAccount}
-                      className="btn-secondary border-red-500/50 bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:border-red-500"
-                    >
-                      {isDeletingAccount ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                      Ha, o'chirish
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowDeleteConfirm(false);
-                        setIsDeletingAccount(false);
-                      }}
-                      disabled={isDeletingAccount}
-                      className="btn-secondary"
-                    >
-                      <X className="w-4 h-4" />
-                      Bekor qilish
-                    </button>
-                  </div>
+                  <p className="text-xs text-slate-400">
+                    Barcha ma'lumotlar o'chiladi
+                  </p>
                 </div>
-              )}
-            </div>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeletingAccount}
+                  className="btn-secondary border-red-500/50 bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:border-red-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-3 py-1.5"
+                >
+                  {isDeletingAccount ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Ha
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setIsDeletingAccount(false);
+                  }}
+                  disabled={isDeletingAccount}
+                  className="btn-secondary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-3 py-1.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Yo'q
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

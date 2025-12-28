@@ -82,7 +82,9 @@ class AuthService:
             raise ValidationError(
                 "Bu telefon raqam orqali allaqachon ro'yxatdan o'tgan foydalanuvchi mavjud. "
                 "Agar bu sizning raqamingiz bo'lsa, iltimos kirish sahifasiga o'ting va parolingiz bilan kiring. "
-                "Agar parolingizni unutgan bo'lsangiz, parolni tiklash funksiyasidan foydalaning."
+                "Agar parolingizni unutgan bo'lsangiz, parolni tiklash funksiyasidan foydalaning. "
+                "Agar bu raqamdan boshqa hisob ochmoqchi bo'lsangiz, avval eski hisobni o'chirishingiz kerak. "
+                "Hisobni o'chirish uchun profil sahifasiga kiring va 'Hisobni o'chirish' tugmasini bosing."
             )
 
         # Create user (unverified)
@@ -235,7 +237,8 @@ class AuthService:
 
         if not user.telegram_id:
             raise ValidationError(
-                "Telegram ID not found. Please connect your Telegram account first via bot."
+                "Telegram ID topilmadi. Telegram orqali kod yuborish uchun avval Telegram botga /start buyrug'ini yuborib, "
+                "bot bilan bog'lanishingiz kerak. Botga /start bosmagan bo'lsangiz, telefon raqam orqali tasdiqlash kodini qo'lda kiriting."
             )
 
         # Generate verification code

@@ -105,3 +105,86 @@ class CourseRepository(BaseRepository[Course]):
         )
         return result.scalar() or 0
 
+    async def get_all(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> List[Course]:
+        """Get all courses (not deleted)."""
+        result = await self.session.execute(
+            select(Course)
+            .where(Course.deleted_at.is_(None))
+            .offset(skip)
+            .limit(limit)
+            .order_by(Course.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def count_all(self) -> int:
+        """Count all courses (not deleted)."""
+        result = await self.session.execute(
+            select(func.count(Course.id)).where(Course.deleted_at.is_(None))
+        )
+        return result.scalar() or 0
+
+    async def get_by_status(
+        self,
+        status: str,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> List[Course]:
+        """Get courses by status."""
+        result = await self.session.execute(
+            select(Course)
+            .where(
+                Course.status == status,
+                Course.deleted_at.is_(None),
+            )
+            .offset(skip)
+            .limit(limit)
+            .order_by(Course.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def count_by_status(self, status: str) -> int:
+        """Count courses by status."""
+        result = await self.session.execute(
+            select(func.count(Course.id)).where(
+                Course.status == status,
+                Course.deleted_at.is_(None),
+            )
+        )
+        return result.scalar() or 0
+
+    async def get_by_category_and_status(
+        self,
+        category: str,
+        status: str,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> List[Course]:
+        """Get courses by category and status."""
+        result = await self.session.execute(
+            select(Course)
+            .where(
+                Course.category == category,
+                Course.status == status,
+                Course.deleted_at.is_(None),
+            )
+            .offset(skip)
+            .limit(limit)
+            .order_by(Course.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def count_by_category_and_status(self, category: str, status: str) -> int:
+        """Count courses by category and status."""
+        result = await self.session.execute(
+            select(func.count(Course.id)).where(
+                Course.category == category,
+                Course.status == status,
+                Course.deleted_at.is_(None),
+            )
+        )
+        return result.scalar() or 0
+

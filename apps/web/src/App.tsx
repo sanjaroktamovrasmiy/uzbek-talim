@@ -14,6 +14,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SchedulePage } from './pages/SchedulePage';
 import { TestsPage } from './pages/TestsPage';
+import { TestDetailPage } from './pages/TestDetailPage';
+import { TestResultsPage } from './pages/TestResultsPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
@@ -21,6 +23,13 @@ import { AdminCoursesPage } from './pages/admin/AdminCoursesPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminStatsPage } from './pages/admin/AdminStatsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
+import { TeacherCoursesPage } from './pages/teacher/TeacherCoursesPage';
+import { TeacherTestsPage } from './pages/teacher/TeacherTestsPage';
+import { CreateCoursePage } from './pages/teacher/CreateCoursePage';
+import { EditCoursePage } from './pages/teacher/EditCoursePage';
+import { CreateTestPage } from './pages/teacher/CreateTestPage';
+import { EditTestPage } from './pages/teacher/EditTestPage';
+import { AboutPlatformPage } from './pages/AboutPlatformPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AdminRoute } from './components/auth/AdminRoute';
@@ -51,10 +60,21 @@ function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="schedule" element={<SchedulePage />} />
           <Route path="tests" element={<TestsPage />} />
+          <Route path="tests/:id" element={<TestDetailPage />} />
+          <Route path="tests/:id/results" element={<TestResultsPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           {/* Dashboard ichida alohida courses sahifalari */}
           <Route path="app/courses" element={<DashboardCoursesPage />} />
           <Route path="app/courses/:slug" element={<DashboardCourseDetailPage />} />
+          {/* About Platform */}
+          <Route path="about" element={<AboutPlatformPage />} />
+          {/* Teacher routes */}
+          <Route path="teacher/courses" element={<TeacherCoursesPage />} />
+          <Route path="teacher/courses/create" element={<CreateCoursePage />} />
+          <Route path="teacher/courses/:id/edit" element={<EditCoursePage />} />
+          <Route path="teacher/tests" element={<TeacherTestsPage />} />
+          <Route path="teacher/tests/create" element={<CreateTestPage />} />
+          <Route path="teacher/tests/:id/edit" element={<EditTestPage />} />
         </Route>
 
         {/* Admin routes */}

@@ -28,6 +28,7 @@ const recentActivities = [
 export function DashboardPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isTeacher = user?.role === 'teacher';
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -38,6 +39,14 @@ export function DashboardPage() {
       default: return role;
     }
   };
+
+  // Teacher-specific quick links
+  const teacherQuickLinks = [
+    { to: '/teacher/courses', icon: BookOpen, label: 'Kurslarim', color: 'from-purple-500 to-purple-600', description: 'Kurslarni boshqarish' },
+    { to: '/teacher/lessons', icon: Calendar, label: 'Darslar', color: 'from-blue-500 to-blue-600', description: 'Darslar yaratish' },
+    { to: '/teacher/tests', icon: FileText, label: 'Testlar', color: 'from-indigo-500 to-indigo-600', description: 'Testlar yaratish' },
+    { to: '/profile', icon: User, label: 'Profil', color: 'from-orange-500 to-orange-600', description: "Shaxsiy ma'lumotlar" },
+  ];
 
   return (
     <div className="py-8 md:py-12">
@@ -50,7 +59,10 @@ export function DashboardPage() {
                 Salom, {user?.first_name}! 👋
               </h1>
               <p className="text-slate-400">
-                O'quv markazimizga xush kelibsiz. Bugun ham yangi bilimlar olishga tayyormisiz?
+                {isTeacher 
+                  ? "O'qituvchi paneliga xush kelibsiz. Kurslar, darslar va testlar yaratishingiz mumkin."
+                  : "O'quv markazimizga xush kelibsiz. Bugun ham yangi bilimlar olishga tayyormisiz?"
+                }
               </p>
             </div>
             <div className="flex items-center gap-3 bg-slate-800/50 rounded-xl px-4 py-3">
@@ -141,13 +153,61 @@ export function DashboardPage() {
           </div>
         )}
 
+        {/* Teacher Quick Actions */}
+        {isTeacher && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-4">Tezkor amallar</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Link
+                to="/teacher/courses/create"
+                className="card-hover group bg-gradient-to-r from-purple-500/10 to-purple-600/10 border-purple-500/20"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <BookOpen className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-1">Yangi kurs yaratish</h3>
+                    <p className="text-sm text-slate-400">
+                      Yangi kurs yaratish va boshqarish
+                    </p>
+                  </div>
+                  <div className="text-purple-400 group-hover:text-purple-300">
+                    →
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/teacher/tests/create"
+                className="card-hover group bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 border-indigo-500/20"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <FileText className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-1">Yangi test yaratish</h3>
+                    <p className="text-sm text-slate-400">
+                      Yangi test yaratish va boshqarish
+                    </p>
+                  </div>
+                  <div className="text-indigo-400 group-hover:text-indigo-300">
+                    →
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Quick Links & Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Quick Links */}
           <div className="lg:col-span-2">
             <h2 className="text-lg font-semibold mb-4">Tezkor havolalar</h2>
             <div className="grid grid-cols-2 gap-4">
-              {quickLinks.map((link) => (
+              {(isTeacher ? teacherQuickLinks : quickLinks).map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -216,18 +276,20 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Empty Courses State */}
-        <div className="card text-center py-12">
-          <div className="text-6xl mb-4">📚</div>
-          <h2 className="text-xl font-semibold mb-2">Hozircha kurslar yo'q</h2>
-          <p className="text-slate-400 mb-6 max-w-md mx-auto">
-            Kursga yoziling va professional ta'limni boshlang! Bizning tajribali ustozlarimiz sizga yordam berishadi.
-          </p>
-          <Link to="/app/courses" className="btn-primary inline-flex">
-            <BookOpen className="w-5 h-5" />
-            Kurslarni ko'rish
-          </Link>
-        </div>
+        {/* Empty Courses State - Only for students */}
+        {!isTeacher && (
+          <div className="card text-center py-12">
+            <div className="text-6xl mb-4">📚</div>
+            <h2 className="text-xl font-semibold mb-2">Hozircha kurslar yo'q</h2>
+            <p className="text-slate-400 mb-6 max-w-md mx-auto">
+              Kursga yoziling va professional ta'limni boshlang! Bizning tajribali ustozlarimiz sizga yordam berishadi.
+            </p>
+            <Link to="/app/courses" className="btn-primary inline-flex">
+              <BookOpen className="w-5 h-5" />
+              Kurslarni ko'rish
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

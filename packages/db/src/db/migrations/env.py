@@ -21,6 +21,10 @@ from db.models import (
     Attendance,
     Payment,
     Notification,
+    Test,
+    TestQuestion,
+    TestQuestionOption,
+    TestResult,
 )
 
 # Alembic Config

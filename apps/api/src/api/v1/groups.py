@@ -4,7 +4,7 @@ Group management endpoints.
 
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 
 from src.schemas.group import (
     GroupResponse,
@@ -97,11 +97,19 @@ async def enroll_student(
     group_id: str,
     request: EnrollStudentRequest,
     group_service: Annotated[GroupService, Depends(get_group_service)],
-    _: Annotated[User, Depends(require_staff)],
+    current_user: Annotated[User, Depends(require_staff)],
 ) -> dict:
     """
     Enroll student to group (staff only).
+    Teachers cannot enroll themselves - only students can be enrolled.
     """
+    from shared.constants import UserRole
+    # Prevent teachers from enrolling themselves
+    if current_user.role == UserRole.TEACHER.value and request.student_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Teachers cannot enroll themselves in courses. Only students can enroll.",
+        )
     await group_service.enroll_student(group_id, request)
     return {"message": "Student enrolled successfully"}
 

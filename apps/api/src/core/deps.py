@@ -20,12 +20,18 @@ from src.services.group_service import GroupService
 from src.services.lesson_service import LessonService
 from src.services.payment_service import PaymentService
 from src.services.notification_service import NotificationService
+from src.services.test_service import TestService
 from src.repositories.user_repository import UserRepository
 from src.repositories.course_repository import CourseRepository
 from src.repositories.group_repository import GroupRepository
 from src.repositories.lesson_repository import LessonRepository
 from src.repositories.payment_repository import PaymentRepository
 from src.repositories.notification_repository import NotificationRepository
+from src.repositories.test_repository import (
+    TestRepository,
+    TestQuestionRepository,
+    TestQuestionOptionRepository,
+)
 
 
 settings = get_settings()
@@ -100,6 +106,27 @@ def get_notification_repository(
     return NotificationRepository(db)
 
 
+def get_test_repository(
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> TestRepository:
+    """Get test repository."""
+    return TestRepository(db)
+
+
+def get_test_question_repository(
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> TestQuestionRepository:
+    """Get test question repository."""
+    return TestQuestionRepository(db)
+
+
+def get_test_question_option_repository(
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> TestQuestionOptionRepository:
+    """Get test question option repository."""
+    return TestQuestionOptionRepository(db)
+
+
 # ===========================================
 # Services
 # ===========================================
@@ -152,6 +179,16 @@ def get_notification_service(
 ) -> NotificationService:
     """Get notification service."""
     return NotificationService(notification_repo)
+
+
+def get_test_service(
+    test_repo: Annotated[TestRepository, Depends(get_test_repository)],
+    question_repo: Annotated[TestQuestionRepository, Depends(get_test_question_repository)],
+    option_repo: Annotated[TestQuestionOptionRepository, Depends(get_test_question_option_repository)],
+    course_repo: Annotated[CourseRepository, Depends(get_course_repository)],
+) -> TestService:
+    """Get test service."""
+    return TestService(test_repo, question_repo, option_repo, course_repo)
 
 
 # ===========================================
@@ -241,4 +278,37 @@ async def require_staff(
             detail="Staff access required",
         )
     return current_user
+
+
+async def require_teacher(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """Require teacher role (teacher, admin, or super_admin)."""
+    from shared.constants import UserRole
+    
+    # Allow teacher, admin, and super_admin
+    # Use is_staff property which includes teacher, admin, and super_admin
+    # But exclude manager (if needed, we can add it later)
+    allowed_roles = [
+        UserRole.TEACHER.value,
+        UserRole.ADMIN.value,
+        UserRole.SUPER_ADMIN.value,
+    ]
+    
+    user_role = current_user.role
+    
+    # Check if user is staff (includes teacher, admin, super_admin, manager)
+    # But we only want teacher, admin, super_admin
+    if user_role in allowed_roles:
+        return current_user
+    
+    # Fallback: check is_admin property
+    if current_user.is_admin:
+        return current_user
+    
+    # If none of the above, deny access
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=f"Teacher or admin access required. Current role: {user_role}",
+    )
 
