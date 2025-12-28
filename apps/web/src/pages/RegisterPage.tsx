@@ -511,8 +511,9 @@ export function RegisterPage() {
               setVerificationCode('');
               setVerificationMethod('phone');
               
-              toast.info("Tasdiqlash jarayoni bekor qilindi. Ro'yxatdan o'tish ma'lumotlari tozalandi.", {
+              toast("Tasdiqlash jarayoni bekor qilindi. Ro'yxatdan o'tish ma'lumotlari tozalandi.", {
                 duration: 5000,
+                icon: 'ℹ️',
               });
             }}
             className="text-slate-400 hover:text-white text-sm w-full"
