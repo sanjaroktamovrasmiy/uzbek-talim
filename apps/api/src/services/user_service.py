@@ -170,7 +170,7 @@ class UserService:
 
     async def delete_user(self, user_id: str) -> None:
         """
-        Soft delete user.
+        Hard delete user (permanently delete from database).
 
         Args:
             user_id: User ID
@@ -179,8 +179,9 @@ class UserService:
             NotFoundError: If user not found
         """
         user = await self.user_repo.get_by_id(user_id)
-        if not user or user.deleted_at:
+        if not user:
             raise NotFoundError("User", user_id)
 
-        await self.user_repo.soft_delete(user)
+        # Hard delete - permanently remove from database
+        await self.user_repo.delete(user_id)
 
