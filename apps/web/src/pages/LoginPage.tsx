@@ -21,6 +21,7 @@ export function LoginPage() {
   const [codeSent, setCodeSent] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [telegramRememberMe, setTelegramRememberMe] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0); // Countdown timer in seconds
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();

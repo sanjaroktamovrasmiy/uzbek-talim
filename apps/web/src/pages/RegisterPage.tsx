@@ -30,6 +30,7 @@ export function RegisterPage() {
     return localStorage.getItem('register_code_sent') === 'true';
   });
   const [sendingCode, setSendingCode] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0); // Countdown timer in seconds
   const [verificationMethod, setVerificationMethod] = useState<'telegram' | 'phone'>(() => {
     return (localStorage.getItem('register_verification_method') as 'telegram' | 'phone') || 'phone';
   });
