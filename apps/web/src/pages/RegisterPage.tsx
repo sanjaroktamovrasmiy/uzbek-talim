@@ -426,10 +426,16 @@ export function RegisterPage() {
       return;
     }
 
+    if (resendCooldown > 0) {
+      return; // Prevent sending if cooldown is active
+    }
+
     setSendingCode(true);
     try {
       await authApi.sendTelegramCode(registeredPhone);
       toast.success('Kod qayta yuborildi!');
+      // Start 60 second countdown
+      setResendCooldown(60);
     } catch (error: any) {
       // Support both error formats: {detail: ...} and {error: {message: ...}}
       const errorMsg = 
@@ -441,6 +447,23 @@ export function RegisterPage() {
       setSendingCode(false);
     }
   };
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [resendCooldown]);
 
   if (codeSent) {
     return (
