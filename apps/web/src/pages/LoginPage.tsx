@@ -123,17 +123,40 @@ export function LoginPage() {
       return;
     }
 
+    if (resendCooldown > 0) {
+      return; // Prevent sending if cooldown is active
+    }
+
     setSendingCode(true);
     try {
       await authApi.sendTelegramCodeLogin(telegramPhone);
       setCodeSent(true);
       toast.success('Kod Telegram orqali yuborildi!');
+      // Start 60 second countdown
+      setResendCooldown(60);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Kod yuborishda xatolik");
     } finally {
       setSendingCode(false);
     }
   };
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [resendCooldown]);
 
   const handleVerifyTelegramCode = async () => {
     if (!telegramCode || telegramCode.length < 4) {
@@ -310,11 +333,13 @@ export function LoginPage() {
             <button
               type="button"
               onClick={handleSendTelegramCode}
-              disabled={sendingCode}
-              className="btn-primary w-full"
+              disabled={sendingCode || resendCooldown > 0}
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {sendingCode ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              ) : resendCooldown > 0 ? (
+                <>Kod yuborish ({resendCooldown}s)</>
               ) : (
                 <>
                   <MessageSquare className="w-5 h-5 inline mr-2" />
@@ -369,13 +394,15 @@ export function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setCodeSent(false);
-                  setTelegramCode('');
-                }}
-                className="text-slate-400 hover:text-white text-sm w-full"
+                onClick={handleSendTelegramCode}
+                disabled={sendingCode || resendCooldown > 0}
+                className="text-slate-400 hover:text-white text-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Kodni qayta yuborish
+                {sendingCode 
+                  ? 'Yuborilmoqda...' 
+                  : resendCooldown > 0 
+                    ? `Kodni qayta yuborish (${resendCooldown}s)` 
+                    : 'Kodni qayta yuborish'}
               </button>
             </>
           )}
